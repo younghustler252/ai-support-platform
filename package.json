@@ -1,0 +1,19 @@
+{
+  "name": "support-platform-workspace",
+  "private": true,
+  "version": "0.1.0",
+  "workspaces": [
+    "apps/*",
+    "packages/*"
+  ],
+  "scripts": {
+    "dev:api": "npm run dev -w @platform/api",
+    "dev:dashboard": "npm run dev -w @platform/dashboard",
+    "dev:worker": "npm run dev:worker -w @platform/api",
+    "build": "npm run build --workspaces --if-present",
+    "typecheck": "npm run typecheck --workspaces --if-present",
+    "test": "npm run test --workspaces --if-present",
+    "db:generate": "npm run db:generate -w @platform/api",
+    "db:migrate": "npm run db:migrate -w @platform/api"
+  }
+}
