@@ -1,7 +1,18 @@
+# Dependencies
 node_modules/
+
+# Build output
 dist/
 .next/
+coverage/
+
+# Environment variables
 .env
 .env.*
 !.env.example
-coverage/
+
+# TypeScript incremental build cache
+*.tsbuildinfo
+
+# Prisma generated client
+apps/api/src/generated/
