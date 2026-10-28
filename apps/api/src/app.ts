@@ -37,7 +37,12 @@ export function createApp() {
 				database: "connected",
 			});
 		} catch (error) {
-			next(error);
+			console.error("Database readiness check failed:", error);
+
+			response.status(503).json({
+				status: "not_ready",
+				database: "unavailable",
+			});
 		}
 	});
 
