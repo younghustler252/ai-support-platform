@@ -3,21 +3,19 @@ import { defineConfig, env } from "prisma/config";
 import { fileURLToPath } from "node:url";
 
 const rootEnvPath = fileURLToPath(
-    new URL("../../.env", import.meta.url)
+	new URL("../../.env", import.meta.url),
 );
 
 loadEnv({
-    path: rootEnvPath,
+	path: rootEnvPath,
 });
 
 export default defineConfig({
-    schema: "prisma/schema.prisma",
-
-    migrations: {
-        path: "prisma/migrations",
-    },
-
-    datasource: {
-        url: env("DATABASE_URL"),
-    },
+	schema: "prisma/schema.prisma",
+	migrations: {
+		path: "prisma/migrations",
+	},
+	datasource: {
+		url: env("DATABASE_URL"),
+	},
 });

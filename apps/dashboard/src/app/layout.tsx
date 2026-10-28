@@ -1,2 +1,13 @@
 import type { ReactNode } from "react";
-export default function RootLayout({ children }: { children: ReactNode }) { return <html lang="en"><body>{children}</body></html>; }
+
+interface RootLayoutProps {
+	children: ReactNode;
+}
+
+export default function RootLayout({ children }: RootLayoutProps) {
+	return (
+		<html lang="en">
+			<body>{children}</body>
+		</html>
+	);
+}
