@@ -1,0 +1,38 @@
+generator client {
+  provider = "prisma-client"
+  output   = "../src/generated/prisma"
+}
+
+datasource db {
+  provider = "postgresql"
+}
+enum Realm { PLATFORM ORGANIZATION APPLICATION }
+enum PermissionScope { OWN ASSIGNED TEAM APPLICATION ORGANIZATION ALL }
+enum MembershipStatus { INVITED ACTIVE SUSPENDED REMOVED }
+enum ConversationStatus { AI_ACTIVE WAITING_FOR_AGENT ASSIGNED_TO_AGENT RESOLVED CLOSED }
+enum MessageSender { CUSTOMER AI AGENT SYSTEM }
+enum NotificationChannel { IN_APP EMAIL WEBHOOK }
+model User { id String @id @default(uuid()) email String @unique displayName String? passwordHash String? createdAt DateTime @default(now()) updatedAt DateTime @updatedAt organizations OrganizationMembership[] applications ApplicationMembership[] auditLogs AuditLog[] }
+model Organization { id String @id @default(uuid()) name String slug String @unique createdAt DateTime @default(now()) memberships OrganizationMembership[] applications Application[] roles Role[] planId String? plan Plan? @relation(fields:[planId],references:[id]) }
+model OrganizationMembership { id String @id @default(uuid()) organizationId String userId String status MembershipStatus @default(INVITED) organization Organization @relation(fields:[organizationId],references:[id]) user User @relation(fields:[userId],references:[id]) roles MembershipRole[] @@unique([organizationId,userId]) @@index([userId,status]) }
+model Application { id String @id @default(uuid()) organizationId String name String slug String createdAt DateTime @default(now()) organization Organization @relation(fields:[organizationId],references:[id]) members ApplicationMembership[] settings ApplicationSetting? keys ApiKey[] knowledge KnowledgeArticle[] customers Customer[] conversations Conversation[] notifications Notification[] usage UsageEvent[] roles Role[] @@unique([organizationId,slug]) @@index([organizationId]) }
+model ApplicationMembership { id String @id @default(uuid()) applicationId String userId String status MembershipStatus @default(INVITED) application Application @relation(fields:[applicationId],references:[id]) user User @relation(fields:[userId],references:[id]) roles ApplicationMembershipRole[] @@unique([applicationId,userId]) }
+model Role { id String @id @default(uuid()) name String realm Realm organizationId String? applicationId String? isProtected Boolean @default(false) organization Organization? @relation(fields:[organizationId],references:[id]) application Application? @relation(fields:[applicationId],references:[id]) permissions RolePermission[] memberships MembershipRole[] applicationMemberships ApplicationMembershipRole[] @@index([realm,organizationId,applicationId]) }
+model Permission { id String @id @default(uuid()) code String @unique description String? realm Realm roles RolePermission[] }
+model RolePermission { roleId String permissionId String scope PermissionScope role Role @relation(fields:[roleId],references:[id],onDelete:Cascade) permission Permission @relation(fields:[permissionId],references:[id],onDelete:Cascade) @@id([roleId,permissionId]) }
+model MembershipRole { membershipId String roleId String membership OrganizationMembership @relation(fields:[membershipId],references:[id],onDelete:Cascade) role Role @relation(fields:[roleId],references:[id]) @@id([membershipId,roleId]) }
+model ApplicationMembershipRole { membershipId String roleId String membership ApplicationMembership @relation(fields:[membershipId],references:[id],onDelete:Cascade) role Role @relation(fields:[roleId],references:[id]) @@id([membershipId,roleId]) }
+model PlatformSetting { id String @id @default("default") config Json version Int @default(1) updatedAt DateTime @updatedAt }
+model ApplicationSetting { applicationId String @id config Json version Int @default(1) updatedAt DateTime @updatedAt application Application @relation(fields:[applicationId],references:[id],onDelete:Cascade) }
+model ApiKey { id String @id @default(uuid()) applicationId String prefix String keyHash String @unique scopes String[] revokedAt DateTime? createdAt DateTime @default(now()) application Application @relation(fields:[applicationId],references:[id],onDelete:Cascade) @@index([applicationId,revokedAt]) }
+model KnowledgeArticle { id String @id @default(uuid()) applicationId String title String content String links Json? publishedAt DateTime? createdAt DateTime @default(now()) application Application @relation(fields:[applicationId],references:[id],onDelete:Cascade) @@index([applicationId,publishedAt]) }
+model Customer { id String @id @default(uuid()) applicationId String externalId String? displayName String? createdAt DateTime @default(now()) application Application @relation(fields:[applicationId],references:[id],onDelete:Cascade) conversations Conversation[] @@unique([applicationId,externalId]) }
+model Conversation { id String @id @default(uuid()) applicationId String customerId String status ConversationStatus @default(AI_ACTIVE) createdAt DateTime @default(now()) updatedAt DateTime @updatedAt application Application @relation(fields:[applicationId],references:[id],onDelete:Cascade) customer Customer @relation(fields:[customerId],references:[id]) messages Message[] assignments ConversationAssignment[] @@index([applicationId,status,updatedAt]) }
+model Message { id String @id @default(uuid()) conversationId String sender MessageSender body String metadata Json? createdAt DateTime @default(now()) conversation Conversation @relation(fields:[conversationId],references:[id],onDelete:Cascade) @@index([conversationId,createdAt]) }
+model ConversationAssignment { id String @id @default(uuid()) conversationId String agentUserId String assignedAt DateTime @default(now()) endedAt DateTime? conversation Conversation @relation(fields:[conversationId],references:[id],onDelete:Cascade) @@index([conversationId,endedAt]) }
+model Notification { id String @id @default(uuid()) applicationId String? recipientUserId String channel NotificationChannel type String payload Json readAt DateTime? createdAt DateTime @default(now()) application Application? @relation(fields:[applicationId],references:[id]) @@index([recipientUserId,readAt,createdAt]) }
+model UsageEvent { id String @id @default(uuid()) applicationId String metric String quantity Int @default(1) metadata Json? createdAt DateTime @default(now()) application Application @relation(fields:[applicationId],references:[id],onDelete:Cascade) @@index([applicationId,metric,createdAt]) }
+model Plan { id String @id @default(uuid()) name String code String @unique organizations Organization[] entitlements PlanEntitlement[] }
+model Feature { id String @id @default(uuid()) code String @unique description String? entitlements PlanEntitlement[] }
+model PlanEntitlement { planId String featureId String enabled Boolean @default(true) limit Int? plan Plan @relation(fields:[planId],references:[id],onDelete:Cascade) feature Feature @relation(fields:[featureId],references:[id],onDelete:Cascade) @@id([planId,featureId]) }
+model AuditLog { id String @id @default(uuid()) actorUserId String? action String resourceType String resourceId String? metadata Json? createdAt DateTime @default(now()) actor User? @relation(fields:[actorUserId],references:[id]) @@index([resourceType,resourceId,createdAt]) }
