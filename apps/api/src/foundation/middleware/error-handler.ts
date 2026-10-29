@@ -1,16 +1,26 @@
 import type { ErrorRequestHandler } from "express";
 
-import { env } from "../../config/env.js";
+import { AppError } from "../errors/app-error.js";
+import { logger } from "../logging/logger.js";
 
 export const errorHandler: ErrorRequestHandler = (error: unknown, _request, response, _next) => {
-	// Keep internal error details out of API responses.
-	console.error("Unhandled API error:", error);
+	const requestId: string | undefined = response.locals.requestContext?.requestId;
+	const knownError = error instanceof AppError ? error : null;
 
-	response.status(500).json({
+	if (!knownError) {
+		logger.error("request.unhandled_error", { requestId, error });
+	}
+
+	if (response.headersSent) {
+		return _next(error);
+	}
+
+	response.status(knownError?.statusCode ?? 500).json({
 		error: {
-			code: "INTERNAL_SERVER_ERROR",
-			message: "An unexpected error occurred.",
-			...(env.NODE_ENV === "development" ? { debug: "Check the API server logs." } : {}),
+			code: knownError?.code ?? "INTERNAL_SERVER_ERROR",
+			message: knownError?.message ?? "An unexpected error occurred.",
+			...(knownError?.details ? { details: knownError.details } : {}),
+			...(requestId ? { requestId } : {}),
 		},
 	});
 };
