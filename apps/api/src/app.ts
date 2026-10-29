@@ -5,7 +5,10 @@ import helmet from "helmet";
 import { env } from "./config/env.js";
 import { container } from "./container/index.js";
 import { apiRouter } from "./routes/index.js";
+import { NotFoundError } from "./foundation/errors/app-error.js";
 import { errorHandler } from "./foundation/middleware/error-handler.js";
+import { requestScope } from "./foundation/middleware/request-scope.js";
+import { logger } from "./foundation/logging/logger.js";
 import type { PrismaClient } from "./generated/prisma/client.js";
 
 export function createApp() {
@@ -19,17 +22,15 @@ export function createApp() {
 		}),
 	);
 	app.use(express.json({ limit: "64kb" }));
+	app.use(requestScope(container));
 
-	// Liveness: confirms the HTTP process is responding.
 	app.get("/health", (_request, response) => {
 		response.json({ status: "ok" });
 	});
 
-	// Readiness: checks the database, not just the HTTP server.
-	app.get("/ready", async (_request, response, next) => {
+	app.get("/ready", async (_request, response) => {
 		try {
 			const database = container.resolve<PrismaClient>("prisma");
-
 			await database.$queryRaw`SELECT 1`;
 
 			response.json({
@@ -37,8 +38,7 @@ export function createApp() {
 				database: "connected",
 			});
 		} catch (error) {
-			console.error("Database readiness check failed:", error);
-
+			logger.error("database.readiness_failed", { error });
 			response.status(503).json({
 				status: "not_ready",
 				database: "unavailable",
@@ -48,13 +48,8 @@ export function createApp() {
 
 	app.use("/api/v1", apiRouter(container));
 
-	app.use((_request, response) => {
-		response.status(404).json({
-			error: {
-				code: "NOT_FOUND",
-				message: "Route not found",
-			},
-		});
+	app.use((_request, _response, next) => {
+		next(new NotFoundError("Route not found"));
 	});
 
 	app.use(errorHandler);
