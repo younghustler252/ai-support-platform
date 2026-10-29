@@ -1,6 +1,7 @@
 import { asValue, createContainer, InjectionMode } from "awilix";
 
 import { prisma } from "../infrastructure/database/prisma.js";
+import { registerAuth } from "../modules/auth/auth.container.js";
 import { registerPlatformSettings } from "../modules/platform-settings/platform-settings.container.js";
 
 export const container = createContainer({
@@ -15,3 +16,4 @@ container.register({
 });
 
 registerPlatformSettings(container);
+registerAuth(container);
