@@ -1,5 +1,5 @@
 import type { RequestHandler } from "express";
-import type { AwilixContainer } from "awilix";
+import { asValue, type AwilixContainer } from "awilix";
 
 import { createRequestContext } from "../context/request-context.js";
 import { logger } from "../logging/logger.js";
@@ -11,8 +11,8 @@ export function requestScope(root: AwilixContainer): RequestHandler {
 		const requestLogger = logger.child({ requestId: context.requestId });
 
 		scope.register({
-			requestContext: { resolve: () => context },
-			requestLogger: { resolve: () => requestLogger },
+			requestContext: asValue(context),
+			requestLogger: asValue(requestLogger),
 		});
 
 		response.locals.scope = scope;
