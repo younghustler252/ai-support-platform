@@ -9,19 +9,19 @@ Status legend: [x] implemented and confirmed; [ ] pending; [~] implemented but a
 - [x] TypeScript checks across workspaces
 - [x] HTTP /health and PostgreSQL /ready checks
 
-## Milestone 2 — Backend Foundation (in progress)
+## Milestone 2 — Backend Foundation (implementation complete; awaiting local verification)
 - [x] Shared Prisma Client registered in Awilix
 - [x] Basic error middleware and database readiness endpoint
-- [~] Typed HTTP/application errors
-- [~] Request context and per-request Awilix scope
-- [~] Request ID and JSON structured logging
-- [~] Zod request body validation helper
-- [~] Abstract base repository dependency contract
-- [~] Foundation unit tests
-- [ ] Verify foundation locally with typecheck and tests
-- [ ] Add consistent validation for params and query strings
-- [ ] Add authorization-ready identity context and safe authenticated principal handling
-- [ ] Add integration tests for request-scope isolation and error responses
+- [x] Typed HTTP/application errors (previous unit tests passed)
+- [~] Request context and per-request Awilix scope (new HTTP isolation tests added)
+- [~] Request ID and JSON structured logging (redaction tests added)
+- [x] Zod request body validation helper (previous unit tests passed)
+- [x] Abstract base repository dependency contract (typecheck passed)
+- [x] Foundation unit tests (previous 5/5 passed)
+- [~] Verify new foundation changes locally with typecheck and tests (previous typecheck passed)
+- [~] Add consistent validation for params and query strings (implemented; awaiting new tests)
+- [x] Reserve null identity and tenant fields in request context; trusted identity population belongs to Milestone 3/4
+- [~] Add HTTP integration tests for request-scope isolation, validation, error responses, logging redaction and health (added; awaiting local run)
 
 ## Milestone 3 — Authentication and Identity
 - [ ] Registration, password hashing, login and protected routes
