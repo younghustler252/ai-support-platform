@@ -12,7 +12,10 @@ const REDACTED_KEYS = new Set([
 	"apikey",
 	"keyhash",
 	"secret",
-	"database_url",
+	"databaseurl",
+	"clientsecret",
+	"privatekey",
+	"setcookie",
 ]);
 
 function sanitize(value: unknown, seen = new WeakSet<object>(), depth = 0): unknown {
@@ -27,7 +30,7 @@ function sanitize(value: unknown, seen = new WeakSet<object>(), depth = 0): unkn
 	return Object.fromEntries(
 		Object.entries(value).map(([key, item]) => [
 			key,
-			REDACTED_KEYS.has(key.toLowerCase()) ? "[REDACTED]" : sanitize(item, seen, depth + 1),
+			REDACTED_KEYS.has(key.replace(/[^a-zA-Z0-9]/g, "").toLowerCase()) ? "[REDACTED]" : sanitize(item, seen, depth + 1),
 		]),
 	);
 }
