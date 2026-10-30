@@ -73,9 +73,11 @@ export class AuthService {
 	async verifyEmail(token: string) {
 		const record = await this.deps.prisma.authToken.findUnique({ where: { tokenHash: hashToken(token) } });
 		if (!record || record.type !== "EMAIL_VERIFICATION" || record.consumedAt || record.expiresAt <= new Date()) throw new ValidationError("Invalid or expired verification token");
-		const updated = await this.deps.prisma.authToken.updateMany({ where: { id: record.id, consumedAt: null, expiresAt: { gt: new Date() } }, data: { consumedAt: new Date() } });
-		if (!updated.count) throw new ValidationError("Verification token already used");
-		await this.deps.prisma.user.update({ where: { id: record.userId }, data: { emailVerifiedAt: new Date() } });
+		await this.deps.prisma.$transaction(async (tx) => {
+			const updated = await tx.authToken.updateMany({ where: { id: record.id, consumedAt: null, expiresAt: { gt: new Date() } }, data: { consumedAt: new Date() } });
+			if (!updated.count) throw new ValidationError("Verification token already used");
+			await tx.user.update({ where: { id: record.userId }, data: { emailVerifiedAt: new Date() } });
+		});
 		return { verified: true };
 	}
 
