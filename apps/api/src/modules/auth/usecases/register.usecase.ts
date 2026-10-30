@@ -1,13 +1,12 @@
 import { ConflictError } from "../../../foundation/errors/app-error.js";
-import type { AuthRepository } from "../repositories/auth.repository.js";
+import type { IAuthRepository } from "../repositories/auth.repository.interface.js";
 import type { PasswordService } from "../services/password.service.js";
 import type { TokenService } from "../services/token.service.js";
 import type { AuthEmailPort } from "../services/auth-email.port.js";
 import type { RegisterInput } from "../validators/auth.validator.js";
-import { publicUserSelect } from "../repositories/auth.repository.js";
 
 interface Dependencies {
-	authRepository: AuthRepository;
+	authRepository: IAuthRepository;
 	passwordService: PasswordService;
 	tokenService: TokenService;
 	authEmailService: AuthEmailPort;
@@ -24,20 +23,9 @@ export class RegisterUseCase {
 		const token = this.deps.tokenService.generate();
 		let user;
 		try {
-			user = await this.deps.authRepository.db.$transaction(async (tx) => {
-				const created = await tx.user.create({
-					data: { email: input.email, displayName: input.displayName, passwordHash },
-					select: publicUserSelect,
-				});
-				await tx.authIdentity.create({ data: {
-					userId: created.id, provider: "EMAIL", providerSubject: input.email,
-				} });
-				await tx.authToken.create({ data: {
-					userId: created.id, type: "EMAIL_VERIFICATION",
-					tokenHash: this.deps.tokenService.hash(token),
-					expiresAt: new Date(Date.now() + 86400000),
-				} });
-				return created;
+			user = await this.deps.authRepository.register({
+				email: input.email, displayName: input.displayName, passwordHash,
+				tokenHash: this.deps.tokenService.hash(token),
 			});
 		} catch (error) {
 			if (typeof error === "object" && error !== null && "code" in error && error.code === "P2002") {
