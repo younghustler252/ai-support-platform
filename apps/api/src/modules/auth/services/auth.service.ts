@@ -111,15 +111,34 @@ export class AuthService {
 		}
 		if (existing.expiresAt <= new Date()) throw new AuthenticationError("Refresh token expired");
 		const next = newToken();
-		const changed = await this.deps.prisma.authSession.updateMany({
-			where: { id: existing.id, revokedAt: null, refreshTokenHash: oldHash, expiresAt: { gt: new Date() } },
-			data: { refreshTokenHash: hashToken(next), lastUsedAt: new Date(), userAgent: userAgent?.slice(0, 512) },
-		});
-		if (!changed.count) {
-			await this.deps.prisma.authSession.updateMany({ where: { userId: existing.userId, revokedAt: null }, data: { revokedAt: new Date() } });
-			throw new AuthenticationError("Refresh token reuse detected");
+		const nextSessionId = randomUUID();
+		try {
+			await this.deps.prisma.$transaction(async (tx) => {
+				const changed = await tx.authSession.updateMany({
+					where: { id: existing.id, revokedAt: null, expiresAt: { gt: new Date() } },
+					data: { revokedAt: new Date(), lastUsedAt: new Date() },
+				});
+				if (!changed.count) throw new AuthenticationError("Refresh token already used");
+				await tx.authSession.create({
+					data: {
+						id: nextSessionId,
+						userId: existing.userId,
+						refreshTokenHash: hashToken(next),
+						expiresAt: new Date(Date.now() + SESSION_MS),
+						userAgent: userAgent?.slice(0, 512),
+					},
+				});
+			});
+		} catch (error) {
+			if (error instanceof AuthenticationError) {
+				await this.deps.prisma.authSession.updateMany({
+					where: { userId: existing.userId, revokedAt: null },
+					data: { revokedAt: new Date() },
+				});
+			}
+			throw error;
 		}
-		return { accessToken: await this.accessToken(existing.userId, existing.id), refreshToken: next, expiresIn: 900 };
+		return { accessToken: await this.accessToken(existing.userId, nextSessionId), refreshToken: next, expiresIn: 900 };
 	}
 
 	async authenticate(header?: string) {
