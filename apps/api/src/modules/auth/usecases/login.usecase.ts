@@ -1,11 +1,11 @@
 import { AuthenticationError } from "../../../foundation/errors/app-error.js";
-import type { AuthRepository } from "../repositories/auth.repository.js";
+import type { IAuthRepository } from "../repositories/auth.repository.interface.js";
 import type { PasswordService } from "../services/password.service.js";
 import type { SessionService } from "../services/session.service.js";
 
 export class LoginUseCase {
 	constructor(private readonly deps: {
-		authRepository: AuthRepository;
+		authRepository: IAuthRepository;
 		passwordService: PasswordService;
 		sessionService: SessionService;
 	}) {}
