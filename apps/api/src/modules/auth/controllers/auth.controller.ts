@@ -1,4 +1,3 @@
-import type { Request, Response } from "express";
 import type { RegisterUseCase } from "../usecases/register.usecase.js";
 import type { VerifyEmailUseCase } from "../usecases/verify-email.usecase.js";
 import type { SendAuthTokenUseCase } from "../usecases/send-auth-token.usecase.js";
