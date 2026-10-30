@@ -4,7 +4,7 @@ import { z } from "zod";
 import { AuthenticationError, ForbiddenError } from "../../../foundation/errors/app-error.js";
 import { parseInput } from "../../../foundation/validation/validate.js";
 import { env } from "../../../config/env.js";
-import type { AuthService } from "../services/auth.service.js";
+import type { AuthController } from "../controllers/auth.controller.js";
 import { registerSchema } from "../validators/auth.validator.js";
 import { authRateLimit } from "../middleware/auth-rate-limit.js";
 
@@ -29,11 +29,11 @@ function checkOrigin(origin?: string) {
 export function authRouter(_container: AwilixContainer): Router {
 	const router = Router();
 	router.use(authRateLimit(30, 15 * 60 * 1000));
-	const handler = (action: (service: AuthService, request: import("express").Request, response: import("express").Response) => Promise<void>) =>
+	const handler = (action: (service: AuthController, request: import("express").Request, response: import("express").Response) => Promise<void>) =>
 		async (request: import("express").Request, response: import("express").Response, next: import("express").NextFunction) => {
 			try {
 				const scope = response.locals.scope as AwilixContainer;
-				await action(scope.resolve<AuthService>("authService"), request, response);
+				await action(scope.resolve<AuthController>("authController"), request, response);
 			} catch (error) { next(error); }
 		};
 	router.post("/register", handler(async (service, request, response) => {
@@ -78,13 +78,13 @@ export function authRouter(_container: AwilixContainer): Router {
 		response.json({ data: { loggedOut: true } });
 	}));
 	router.post("/logout-all", handler(async (service, request, response) => {
-		const { user } = await service.authenticate(request.get("authorization"));
+		const { user } = await service.me(request.get("authorization"));
 		checkOrigin(request.get("origin"));
 		response.clearCookie(cookieName, { ...cookieOptions, maxAge: undefined });
 		response.json({ data: await service.logoutAll(user.id) });
 	}));
 	router.get("/me", handler(async (service, request, response) => {
-		const { user } = await service.authenticate(request.get("authorization"));
+		const { user } = await service.me(request.get("authorization"));
 		response.json({ data: { user } });
 	}));
 	return router;
