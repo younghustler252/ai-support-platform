@@ -80,13 +80,13 @@ export class AuthController {
 	};
 	logoutAll = async (req: Request, res: Response) => {
 		checkOrigin(req.get("origin"));
-		const { user } = await this.deps.getCurrentUserUseCase.execute(req.get("authorization"));
+		const { user } = res.locals.auth as Awaited<ReturnType<GetCurrentUserUseCase["execute"]>>;
 		const result = await this.deps.logoutAllUseCase.execute(user.id);
 		res.clearCookie(cookieName, { ...cookieOptions, maxAge: undefined });
 		res.json({ data: result });
 	};
 	me = async (req: Request, res: Response) => {
-		const { user } = await this.deps.getCurrentUserUseCase.execute(req.get("authorization"));
+		const { user } = res.locals.auth as Awaited<ReturnType<GetCurrentUserUseCase["execute"]>>;
 		res.json({ data: { user } });
 	};
 }
