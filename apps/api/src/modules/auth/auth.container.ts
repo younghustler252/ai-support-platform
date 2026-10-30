@@ -2,6 +2,7 @@ import { asClass, type AwilixContainer } from "awilix";
 import { AuthEmailAdapter } from "../../infrastructure/email/auth-email.adapter.js";
 import { AuthController } from "./controllers/auth.controller.js";
 import { AuthRepository } from "./repositories/auth.repository.js";
+import { SessionRepositoryImpl } from "./repositories/session.repository.impl.js";
 import { PasswordService } from "./services/password.service.js";
 import { TokenService } from "./services/token.service.js";
 import { SessionService } from "./services/session.service.js";
@@ -18,6 +19,7 @@ import { GetCurrentUserUseCase } from "./usecases/get-current-user.usecase.js";
 export function registerAuth(container: AwilixContainer): void {
 	container.register({
 		authRepository: asClass(AuthRepository).scoped(),
+		sessionRepository: asClass(SessionRepositoryImpl).scoped(),
 		passwordService: asClass(PasswordService).singleton(),
 		tokenService: asClass(TokenService).singleton(),
 		authEmailService: asClass(AuthEmailAdapter).singleton(),
