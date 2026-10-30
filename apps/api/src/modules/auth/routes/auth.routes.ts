@@ -6,6 +6,7 @@ import { parseInput } from "../../../foundation/validation/validate.js";
 import { env } from "../../../config/env.js";
 import type { AuthService } from "../services/auth.service.js";
 import { registerSchema } from "../validators/auth.validator.js";
+import { authRateLimit } from "../middleware/auth-rate-limit.js";
 
 const email = z.string().trim().toLowerCase().pipe(z.email().max(254));
 const password = z.string().min(12).max(128);
@@ -27,6 +28,7 @@ function checkOrigin(origin?: string) {
 
 export function authRouter(_container: AwilixContainer): Router {
 	const router = Router();
+	router.use(authRateLimit(30, 15 * 60 * 1000));
 	const handler = (action: (service: AuthService, request: import("express").Request, response: import("express").Response) => Promise<void>) =>
 		async (request: import("express").Request, response: import("express").Response, next: import("express").NextFunction) => {
 			try {
