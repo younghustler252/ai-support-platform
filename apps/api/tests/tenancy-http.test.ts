@@ -126,11 +126,11 @@ const routes: Array<{ method: string; path: string; scope: Call["scope"]; action
 	{ method: "POST", path: `${a}/api-keys/${key}/rotate`, scope: "application", action: "api-key.manage" },
 ];
 
-function send(baseUrl: string, method: string, path: string, headers: Record<string, string> = {}) {
+function send(baseUrl: string, method: string, path: string, headers: Record<string, string> = {}, body: unknown = {}) {
 	return fetch(`${baseUrl}${path}`, {
 		method,
 		headers: { "Content-Type": "application/json", Authorization: "Bearer access-token", ...headers },
-		body: method === "GET" || method === "DELETE" ? undefined : "{}",
+		body: method === "GET" || method === "DELETE" ? undefined : JSON.stringify(body),
 	});
 }
 
@@ -182,7 +182,8 @@ test("an authorised read reaches the controller", async () => {
 test("api key creation and rotation responses are never cached", async () => {
 	const { server } = buildApp();
 	await withServer(server, async (baseUrl) => {
-		const created = await send(baseUrl, "POST", `${a}/api-keys`, { "Content-Type": "application/json" });
+		const created = await send(baseUrl, "POST", `${a}/api-keys`, {}, { name: "Backend", scopes: ["chat"] });
+		assert.equal(created.status, 200);
 		assert.equal(created.headers.get("cache-control"), "no-store");
 
 		const rotated = await send(baseUrl, "POST", `${a}/api-keys/${key}/rotate`);
