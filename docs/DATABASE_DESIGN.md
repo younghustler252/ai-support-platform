@@ -14,3 +14,12 @@ Schema is provisional; review relations, constraints, migrations, tenancy and in
 - `ApiKey`: `name`, `createdByUserId`, `lastUsedAt`, `expiresAt`; only `keyHash` and a display `prefix` are stored.
 
 Migration: `20261031120000_tenancy_foundation`. Dynamic RBAC tables stay provisional until Milestone 5.
+
+## Dynamic RBAC (Milestone 5)
+
+- `Permission`: synced from the code catalog; `delegable` marks permissions custom roles may hold.
+- `Role`: protected default roles have a unique `key`, `scopeKey = "system"` and no organization. Custom roles carry `organizationId` (and `applicationId` for application roles). `(scopeKey, nameKey)` is unique, where `nameKey` is the lower-cased name. Organization and application deletion cascades to their roles.
+- `RolePermission`: role to permission with a `PermissionScope`.
+- `MembershipRole`, `ApplicationMembershipRole`: assignments with `assignedByUserId` and `createdAt`.
+
+Migration: `20261101090000_dynamic_rbac`. The catalog sync runs when the server starts and must have run before roles can be created.

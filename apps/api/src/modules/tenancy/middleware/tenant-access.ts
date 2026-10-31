@@ -22,6 +22,7 @@ export function requireOrganization(action: OrganizationAction): RequestHandler 
 			applicationId: null,
 			organizationRole: access.role,
 			role: access.role,
+			grants: access.grants,
 		});
 		next();
 	};
@@ -40,6 +41,7 @@ export function requireApplication(action: ApplicationAction): RequestHandler {
 			applicationId: access.applicationId,
 			organizationRole: access.organizationRole,
 			role: access.role,
+			grants: access.grants,
 		});
 		next();
 	};

@@ -1,9 +1,28 @@
 import type { PrismaClient } from "../../../generated/prisma/client.js";
+import type { RoleGrant } from "../tenancy.types.js";
 import type {
 	ApplicationAccessRecord,
 	IAccessRepository,
 	OrganizationMembershipRecord,
 } from "./access.repository.interface.js";
+
+const roleGrantsSelect = {
+	select: {
+		role: {
+			select: {
+				permissions: { select: { scope: true, permission: { select: { code: true } } } },
+			},
+		},
+	},
+} as const;
+
+interface GrantRows {
+	role: { permissions: Array<{ scope: RoleGrant["scope"]; permission: { code: string } }> };
+}
+
+function toGrants(rows: GrantRows[] | undefined): RoleGrant[] {
+	return (rows ?? []).flatMap((row) => row.role.permissions.map((item) => ({ code: item.permission.code, scope: item.scope })));
+}
 
 export class AccessRepositoryImpl implements IAccessRepository {
 	constructor(private readonly deps: { prisma: PrismaClient }) {}
@@ -11,13 +30,19 @@ export class AccessRepositoryImpl implements IAccessRepository {
 	async findOrganizationMembership(userId: string, organizationId: string): Promise<OrganizationMembershipRecord | null> {
 		const membership = await this.deps.prisma.organizationMembership.findUnique({
 			where: { organizationId_userId: { organizationId, userId } },
-			select: { role: true, status: true, organization: { select: { archivedAt: true } } },
+			select: {
+				role: true,
+				status: true,
+				organization: { select: { archivedAt: true } },
+				roles: roleGrantsSelect,
+			},
 		});
 		if (!membership) return null;
 		return {
 			role: membership.role,
 			status: membership.status,
 			organizationArchivedAt: membership.organization.archivedAt,
+			grants: toGrants(membership.roles),
 		};
 	}
 
@@ -33,10 +58,10 @@ export class AccessRepositoryImpl implements IAccessRepository {
 				organization: {
 					select: {
 						archivedAt: true,
-						memberships: { where: { userId }, select: { role: true, status: true }, take: 1 },
+						memberships: { where: { userId }, select: { role: true, status: true, roles: roleGrantsSelect }, take: 1 },
 					},
 				},
-				members: { where: { userId }, select: { role: true, status: true }, take: 1 },
+				members: { where: { userId }, select: { role: true, status: true, roles: roleGrantsSelect }, take: 1 },
 			},
 		});
 		if (!application) return null;
@@ -50,6 +75,8 @@ export class AccessRepositoryImpl implements IAccessRepository {
 			organizationStatus: organizationMembership?.status ?? null,
 			applicationRole: applicationMembership?.role ?? null,
 			applicationStatus: applicationMembership?.status ?? null,
+			organizationGrants: toGrants(organizationMembership?.roles),
+			applicationGrants: applicationMembership?.status === "ACTIVE" ? toGrants(applicationMembership.roles) : [],
 		};
 	}
 }

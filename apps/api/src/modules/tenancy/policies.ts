@@ -19,6 +19,9 @@ export const organizationPolicy = {
 	"invitation.manage": "ADMIN",
 	"application.create": "ADMIN",
 	"application.list": "MEMBER",
+	"role.read": "ADMIN",
+	"role.manage": "ADMIN",
+	"role.assign": "ADMIN",
 } as const satisfies Record<string, TenantRole>;
 
 export type OrganizationAction = keyof typeof organizationPolicy;
@@ -36,6 +39,9 @@ export const applicationPolicy = {
 	"application.member.manage": { minimum: "ADMIN" },
 	"api-key.read": { minimum: "ADMIN" },
 	"api-key.manage": { minimum: "ADMIN" },
+	"application.role.read": { minimum: "ADMIN" },
+	"application.role.manage": { minimum: "ADMIN" },
+	"application.role.assign": { minimum: "ADMIN" },
 } as const satisfies Record<string, ApplicationRule>;
 
 export type ApplicationAction = keyof typeof applicationPolicy;

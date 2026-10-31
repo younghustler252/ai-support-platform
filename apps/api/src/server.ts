@@ -4,10 +4,13 @@ import { container } from "./container/index.js";
 import { logger } from "./foundation/logging/logger.js";
 import type { EmailQueue } from "./infrastructure/email/in-process-email-queue.js";
 import { prisma } from "./infrastructure/database/prisma.js";
+import { syncRbacCatalog } from "./modules/rbac/services/catalog-sync.js";
 import { startAuthMaintenance } from "./modules/auth/auth.maintenance.js";
 
 const SHUTDOWN_TIMEOUT_MS = 15_000;
 const EMAIL_DRAIN_TIMEOUT_MS = 5_000;
+
+await syncRbacCatalog(prisma);
 
 const server = createApp().listen(env.PORT, () => {
 	logger.info("server.started", { port: env.PORT });

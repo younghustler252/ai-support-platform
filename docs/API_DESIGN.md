@@ -25,3 +25,17 @@ All paths are under `/api/v1` and require a bearer access token unless noted.
 | GET | `/service/application` | API key authenticated identity check |
 
 Non-members receive 404, members without sufficient role 403, exceeded plan-independent limits 403 `LIMIT_EXCEEDED`.
+
+## Roles (Milestone 5)
+
+The same routes exist under `/organizations/:organizationId` for organization roles and under `/organizations/:organizationId/applications/:applicationId` for application roles.
+
+| Method | Path | Action |
+| --- | --- | --- |
+| GET | `.../roles/permissions` | permissions that can be put in a role of this realm |
+| GET, POST | `.../roles` | list (default and custom), create |
+| GET, PATCH, DELETE | `.../roles/:roleId` | read, update, delete (custom roles only) |
+| GET | `.../roles/:roleId/members` | members holding the role |
+| PUT, DELETE | `.../roles/:roleId/members/:userId` | assign, unassign |
+
+Creating a role takes `{ name, description?, permissions: string[] }`. The scope of each permission is decided by the role's realm and is not client-supplied.

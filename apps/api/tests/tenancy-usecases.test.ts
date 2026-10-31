@@ -129,17 +129,18 @@ test("application creation enforces the organization limit and slug uniqueness",
 	);
 });
 
-test("only organization admins see every application", async () => {
+test("only organization-wide application read grants see every application", async () => {
 	const seen: boolean[] = [];
 	const useCase = new ListApplicationsUseCase({
 		applicationRepository: applicationRepository({
 			listVisible: async (_org, _user, seesAll) => { seen.push(seesAll); return []; },
 		}),
 	});
-	await useCase.execute({ organizationId: "org-1", userId: "user-1", role: "MEMBER" });
-	await useCase.execute({ organizationId: "org-1", userId: "user-1", role: "ADMIN" });
-	await useCase.execute({ organizationId: "org-1", userId: "user-1", role: "OWNER" });
-	assert.deepEqual(seen, [false, true, true]);
+	await useCase.execute({ organizationId: "org-1", userId: "user-1", grants: {} });
+	await useCase.execute({ organizationId: "org-1", userId: "user-1", grants: { "application.read": "ORGANIZATION" } });
+	await useCase.execute({ organizationId: "org-1", userId: "user-1", grants: { "application.read": "ALL" } });
+	await useCase.execute({ organizationId: "org-1", userId: "user-1", grants: { "application.read": "APPLICATION" } });
+	assert.deepEqual(seen, [false, true, true, false]);
 });
 
 function membershipRepository(overrides: Partial<IMembershipRepository> = {}): IMembershipRepository {

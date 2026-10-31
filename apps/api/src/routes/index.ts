@@ -6,6 +6,7 @@ import { applicationRouter } from "../modules/applications/routes/application.ro
 import { authRouter } from "../modules/auth/routes/auth.routes.js";
 import { membershipRouter } from "../modules/memberships/routes/membership.routes.js";
 import { organizationRouter } from "../modules/organizations/routes/organization.routes.js";
+import { roleRouter } from "../modules/rbac/routes/role.routes.js";
 import { publicSettingsRouter } from "../modules/platform-settings/routes/public-settings.routes.js";
 
 export function apiRouter(container: AwilixContainer): Router {
@@ -17,6 +18,7 @@ export function apiRouter(container: AwilixContainer): Router {
 	router.use(membershipRouter());
 	router.use(applicationRouter());
 	router.use(apiKeyRouter());
+	router.use(roleRouter());
 
 	return router;
 }

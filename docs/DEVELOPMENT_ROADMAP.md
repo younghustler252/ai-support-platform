@@ -38,10 +38,10 @@ Status legend: [x] implemented and confirmed; [ ] pending; [~] implemented but a
 - [~] Tenant boundary integration tests (written, need a migrated TEST_DATABASE_URL to run)
 
 ## Milestone 5 — Dynamic RBAC
-- [ ] Permission catalog and protected default roles
-- [ ] Custom roles and membership role assignments
-- [ ] Permission scope evaluation
-- [ ] Cross-tenant and least-privilege tests
+- [~] Permission catalog and protected default roles (implemented, awaiting local verification)
+- [~] Custom roles and membership role assignments (implemented, awaiting local verification)
+- [~] Permission scope evaluation (implemented; resource scopes OWN/ASSIGNED/TEAM are used from Milestone 6)
+- [~] Cross-tenant and least-privilege tests (written, integration test needs TEST_DATABASE_URL)
 
 ## Milestone 6 — Customers and Conversations
 - [ ] Application-scoped customers and conversations

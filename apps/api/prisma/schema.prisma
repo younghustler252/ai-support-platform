@@ -238,17 +238,25 @@ model ApplicationMembership {
 
 model Role {
   id                     String                      @id @default(uuid())
+  key                    String?                     @unique
   name                   String
+  nameKey                String
+  scopeKey               String                      @default("system")
+  description            String?
   realm                  Realm
   organizationId         String?
   applicationId          String?
   isProtected            Boolean                     @default(false)
-  organization           Organization?               @relation(fields: [organizationId], references: [id])
-  application            Application?                @relation(fields: [applicationId], references: [id])
+  createdByUserId        String?
+  createdAt              DateTime                    @default(now())
+  updatedAt              DateTime                    @updatedAt
+  organization           Organization?               @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  application            Application?                @relation(fields: [applicationId], references: [id], onDelete: Cascade)
   permissions            RolePermission[]
   memberships            MembershipRole[]
   applicationMemberships ApplicationMembershipRole[]
 
+  @@unique([scopeKey, nameKey])
   @@index([realm, organizationId, applicationId])
 }
 
@@ -257,6 +265,7 @@ model Permission {
   code        String           @unique
   description String?
   realm       Realm
+  delegable   Boolean          @default(true)
   roles       RolePermission[]
 }
 
@@ -271,21 +280,27 @@ model RolePermission {
 }
 
 model MembershipRole {
-  membershipId String
-  roleId       String
-  membership   OrganizationMembership @relation(fields: [membershipId], references: [id], onDelete: Cascade)
-  role         Role                   @relation(fields: [roleId], references: [id])
+  membershipId     String
+  roleId           String
+  assignedByUserId String?
+  createdAt        DateTime               @default(now())
+  membership       OrganizationMembership @relation(fields: [membershipId], references: [id], onDelete: Cascade)
+  role             Role                   @relation(fields: [roleId], references: [id])
 
   @@id([membershipId, roleId])
+  @@index([roleId])
 }
 
 model ApplicationMembershipRole {
-  membershipId String
-  roleId       String
-  membership   ApplicationMembership @relation(fields: [membershipId], references: [id], onDelete: Cascade)
-  role         Role                  @relation(fields: [roleId], references: [id])
+  membershipId     String
+  roleId           String
+  assignedByUserId String?
+  createdAt        DateTime              @default(now())
+  membership       ApplicationMembership @relation(fields: [membershipId], references: [id], onDelete: Cascade)
+  role             Role                  @relation(fields: [roleId], references: [id])
 
   @@id([membershipId, roleId])
+  @@index([roleId])
 }
 
 model PlatformSetting {

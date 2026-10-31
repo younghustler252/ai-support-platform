@@ -33,9 +33,9 @@ export class ApplicationController {
 
 	list = async (_request: Request, response: Response): Promise<void> => {
 		const { user } = authContext(response);
-		const { organizationId, role } = tenantContext(response);
+		const { organizationId, grants } = tenantContext(response);
 		response.json({
-			data: { applications: await this.deps.listApplicationsUseCase.execute({ organizationId, userId: user.id, role }) },
+			data: { applications: await this.deps.listApplicationsUseCase.execute({ organizationId, userId: user.id, grants }) },
 		});
 	};
 

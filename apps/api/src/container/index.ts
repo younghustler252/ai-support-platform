@@ -10,6 +10,7 @@ import { registerAudit } from "../modules/audit/audit.container.js";
 import { registerAuth } from "../modules/auth/auth.container.js";
 import { registerMemberships } from "../modules/memberships/memberships.container.js";
 import { registerOrganizations } from "../modules/organizations/organizations.container.js";
+import { registerRbac } from "../modules/rbac/rbac.container.js";
 import { registerPlatformSettings } from "../modules/platform-settings/platform-settings.container.js";
 import { registerTenancy } from "../modules/tenancy/tenancy.container.js";
 
@@ -35,3 +36,4 @@ registerOrganizations(container);
 registerMemberships(container);
 registerApplications(container);
 registerApiKeys(container);
+registerRbac(container);

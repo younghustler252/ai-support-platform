@@ -8,13 +8,13 @@ import type {
 	IAccessRepository,
 	OrganizationMembershipRecord,
 } from "../src/modules/tenancy/repositories/access.repository.interface.js";
-import { RoleAuthorizer } from "../src/modules/tenancy/services/authorizer.service.js";
+import { PermissionAuthorizer } from "../src/modules/tenancy/services/authorizer.service.js";
 import type { TenantMembershipStatus, TenantRole } from "../src/modules/tenancy/tenancy.types.js";
 
 const roles: TenantRole[] = ["MEMBER", "ADMIN", "OWNER"];
 
 function membership(role: TenantRole, status: TenantMembershipStatus = "ACTIVE", archived: Date | null = null): OrganizationMembershipRecord {
-	return { role, status, organizationArchivedAt: archived };
+	return { role, status, organizationArchivedAt: archived, grants: [] };
 }
 
 function applicationRecord(overrides: Partial<ApplicationAccessRecord> = {}): ApplicationAccessRecord {
@@ -25,12 +25,14 @@ function applicationRecord(overrides: Partial<ApplicationAccessRecord> = {}): Ap
 		organizationStatus: "ACTIVE",
 		applicationRole: null,
 		applicationStatus: null,
+		organizationGrants: [],
+		applicationGrants: [],
 		...overrides,
 	};
 }
 
-function authorizer(overrides: Partial<IAccessRepository> = {}): RoleAuthorizer {
-	return new RoleAuthorizer({
+function authorizer(overrides: Partial<IAccessRepository> = {}): PermissionAuthorizer {
+	return new PermissionAuthorizer({
 		accessRepository: {
 			findOrganizationMembership: async () => null,
 			findApplicationAccess: async () => null,
@@ -47,7 +49,10 @@ test("organization actions are allowed exactly from their minimum role upwards",
 			const subject = authorizer({ findOrganizationMembership: async () => membership(role) });
 			const attempt = subject.organization("user-1", "org-1", action);
 			if (rank[role] >= rank[minimum]) {
-				assert.deepEqual(await attempt, { organizationId: "org-1", role }, `${role} should be allowed ${action}`);
+				const access = await attempt;
+				assert.equal(access.organizationId, "org-1");
+				assert.equal(access.role, role);
+				assert.equal(access.grants[action], "ORGANIZATION", `${role} should be allowed ${action}`);
 			} else {
 				await assert.rejects(attempt, ForbiddenError, `${role} should be denied ${action}`);
 			}

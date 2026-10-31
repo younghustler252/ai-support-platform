@@ -33,6 +33,8 @@ export const tenancyConfig = {
 		apiKeysPerApplication: 20,
 		pendingInvitationsPerOrganization: 50,
 		allowedOriginsPerApplication: 20,
+		customRolesPerScope: 20,
+		rolesPerMembership: 10,
 	},
 	invitationTtlMs: 7 * DAY,
 	apiKey: {
@@ -47,6 +49,7 @@ export const tenancyConfig = {
 		createInvitation: { limit: 30, windowMs: HOUR },
 		acceptInvitation: { limit: 10, windowMs: 15 * MINUTE },
 		manageApiKeys: { limit: 30, windowMs: HOUR },
+		manageRoles: { limit: 60, windowMs: HOUR },
 		apiKeyRequests: { limit: 600, windowMs: MINUTE },
 		apiKeyIp: { limit: 300, windowMs: MINUTE },
 	},

@@ -1,9 +1,10 @@
-import type { TenantMembershipStatus, TenantRole } from "../tenancy.types.js";
+import type { RoleGrant, TenantMembershipStatus, TenantRole } from "../tenancy.types.js";
 
 export interface OrganizationMembershipRecord {
 	role: TenantRole;
 	status: TenantMembershipStatus;
 	organizationArchivedAt: Date | null;
+	grants: RoleGrant[];
 }
 
 export interface ApplicationAccessRecord {
@@ -13,6 +14,8 @@ export interface ApplicationAccessRecord {
 	organizationStatus: TenantMembershipStatus | null;
 	applicationRole: TenantRole | null;
 	applicationStatus: TenantMembershipStatus | null;
+	organizationGrants: RoleGrant[];
+	applicationGrants: RoleGrant[];
 }
 
 export interface IAccessRepository {

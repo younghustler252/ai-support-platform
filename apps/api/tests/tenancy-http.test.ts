@@ -10,6 +10,7 @@ import { MemoryRateLimiter } from "../src/foundation/rate-limit/rate-limiter.js"
 import { apiKeyRouter } from "../src/modules/api-keys/routes/api-key.routes.js";
 import { applicationRouter } from "../src/modules/applications/routes/application.routes.js";
 import { membershipRouter } from "../src/modules/memberships/routes/membership.routes.js";
+import { roleRouter } from "../src/modules/rbac/routes/role.routes.js";
 import { organizationRouter } from "../src/modules/organizations/routes/organization.routes.js";
 import type { ApiKeyPrincipal } from "../src/modules/api-keys/api-keys.types.js";
 import { withServer } from "./helpers.js";
@@ -19,6 +20,7 @@ const app = "22222222-2222-4222-8222-222222222222";
 const user = "33333333-3333-4333-8333-333333333333";
 const key = "44444444-4444-4444-8444-444444444444";
 const invitation = "55555555-5555-4555-8555-555555555555";
+const role = "66666666-6666-4666-8666-666666666666";
 
 const identity = {
 	user: { id: "user-1", email: "user@example.com", displayName: "User", emailVerifiedAt: new Date() },
@@ -73,6 +75,7 @@ function buildApp(options: { deny?: Error; authenticated?: boolean } = {}) {
 		membershipController: asValue(controller),
 		applicationController: asValue(controller),
 		apiKeyController: asValue(controller),
+		roleController: asValue(controller),
 		getCurrentUserUseCase: asValue({
 			execute: async () => {
 				if (options.authenticated === false) throw new AuthenticationError("Authentication required");
@@ -94,6 +97,7 @@ function buildApp(options: { deny?: Error; authenticated?: boolean } = {}) {
 	server.use(membershipRouter());
 	server.use(applicationRouter());
 	server.use(apiKeyRouter());
+	server.use(roleRouter());
 	server.use(errorHandler);
 	return { server, calls, hits: () => controllerHits };
 }
@@ -124,6 +128,21 @@ const routes: Array<{ method: string; path: string; scope: Call["scope"]; action
 	{ method: "POST", path: `${a}/api-keys`, scope: "application", action: "api-key.manage" },
 	{ method: "DELETE", path: `${a}/api-keys/${key}`, scope: "application", action: "api-key.manage" },
 	{ method: "POST", path: `${a}/api-keys/${key}/rotate`, scope: "application", action: "api-key.manage" },
+	{ method: "GET", path: `${o}/roles`, scope: "organization", action: "role.read" },
+	{ method: "GET", path: `${o}/roles/permissions`, scope: "organization", action: "role.read" },
+	{ method: "POST", path: `${o}/roles`, scope: "organization", action: "role.manage" },
+	{ method: "GET", path: `${o}/roles/${role}`, scope: "organization", action: "role.read" },
+	{ method: "PATCH", path: `${o}/roles/${role}`, scope: "organization", action: "role.manage" },
+	{ method: "DELETE", path: `${o}/roles/${role}`, scope: "organization", action: "role.manage" },
+	{ method: "GET", path: `${o}/roles/${role}/members`, scope: "organization", action: "role.read" },
+	{ method: "PUT", path: `${o}/roles/${role}/members/${user}`, scope: "organization", action: "role.assign" },
+	{ method: "DELETE", path: `${o}/roles/${role}/members/${user}`, scope: "organization", action: "role.assign" },
+	{ method: "GET", path: `${a}/roles`, scope: "application", action: "application.role.read" },
+	{ method: "POST", path: `${a}/roles`, scope: "application", action: "application.role.manage" },
+	{ method: "PATCH", path: `${a}/roles/${role}`, scope: "application", action: "application.role.manage" },
+	{ method: "DELETE", path: `${a}/roles/${role}`, scope: "application", action: "application.role.manage" },
+	{ method: "PUT", path: `${a}/roles/${role}/members/${user}`, scope: "application", action: "application.role.assign" },
+	{ method: "DELETE", path: `${a}/roles/${role}/members/${user}`, scope: "application", action: "application.role.assign" },
 ];
 
 function send(baseUrl: string, method: string, path: string, headers: Record<string, string> = {}, body: unknown = {}) {
