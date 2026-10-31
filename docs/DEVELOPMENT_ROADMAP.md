@@ -24,10 +24,12 @@ Status legend: [x] implemented and confirmed; [ ] pending; [~] implemented but a
 - [x] HTTP integration tests for request-scope isolation, validation, error responses, logging redaction and health (passed)
 
 ## Milestone 3 — Authentication and Identity
-- [ ] Registration, password hashing, login and protected routes
-- [ ] Refresh token rotation, logout and session revocation
-- [ ] Email verification and password recovery
-- [ ] Authentication integration and security tests
+- [~] Registration, password hashing, login and protected routes
+- [~] Refresh token rotation with reuse detection, logout, session list and revocation
+- [~] Email verification, password recovery and password change
+- [~] Audit events, rate limits, absolute session lifetime, disabled-user enforcement
+- [~] Authentication unit, HTTP and Postgres integration tests (awaiting local verification)
+- [ ] Google sign-in (schema reserved)
 
 ## Milestone 4 — Organizations and Applications
 - [ ] Organization creation, membership and invitations

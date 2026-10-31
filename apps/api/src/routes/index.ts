@@ -8,7 +8,7 @@ export function apiRouter(container: AwilixContainer): Router {
 	const router = Router();
 
 	router.use("/platform", publicSettingsRouter(container));
-	router.use("/auth", authRouter(container));
+	router.use("/auth", authRouter());
 
 	return router;
 }

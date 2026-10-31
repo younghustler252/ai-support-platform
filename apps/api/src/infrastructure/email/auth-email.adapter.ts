@@ -1,27 +1,19 @@
-import { env } from "../../config/env.js";
 import type { AuthEmailPort } from "../../modules/auth/services/auth-email.port.js";
+import { passwordChangedEmail, passwordResetEmail, verificationEmail } from "./auth-email.templates.js";
+import type { EmailQueue } from "./in-process-email-queue.js";
 
 export class AuthEmailAdapter implements AuthEmailPort {
-	async send(email: string, purpose: "verify" | "reset", token: string): Promise<void> {
-		const url = new URL(purpose === "verify" ? "/verify-email" : "/reset-password", env.AUTH_FRONTEND_URL);
-		url.searchParams.set("token", token);
+	constructor(private readonly deps: { emailQueue: EmailQueue }) {}
 
-		if (!env.AUTH_EMAIL_API_KEY || !env.AUTH_EMAIL_FROM) {
-			if (env.NODE_ENV === "production") throw new Error("Authentication email provider is not configured");
-			console.info("[auth development email]", email, url.toString());
-			return;
-		}
+	sendVerification(email: string, token: string): Promise<void> {
+		return this.deps.emailQueue.enqueue({ to: email, ...verificationEmail(token) });
+	}
 
-		const response = await fetch("https://api.resend.com/emails", {
-			method: "POST",
-			headers: { Authorization: `Bearer ${env.AUTH_EMAIL_API_KEY}`, "Content-Type": "application/json" },
-			body: JSON.stringify({
-				from: env.AUTH_EMAIL_FROM,
-				to: [email],
-				subject: purpose === "verify" ? "Verify your SupportAI email" : "Reset your SupportAI password",
-				html: `<p><a href="${url.toString()}">Continue to SupportAI</a></p>`,
-			}),
-		});
-		if (!response.ok) throw new Error("Authentication email delivery failed");
+	sendPasswordReset(email: string, token: string): Promise<void> {
+		return this.deps.emailQueue.enqueue({ to: email, ...passwordResetEmail(token) });
+	}
+
+	sendPasswordChanged(email: string): Promise<void> {
+		return this.deps.emailQueue.enqueue({ to: email, ...passwordChangedEmail() });
 	}
 }

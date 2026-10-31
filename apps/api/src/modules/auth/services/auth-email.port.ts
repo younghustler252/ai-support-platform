@@ -1,3 +1,5 @@
 export interface AuthEmailPort {
-	send(email: string, purpose: "verify" | "reset", token: string): Promise<void>;
+	sendVerification(email: string, token: string): Promise<void>;
+	sendPasswordReset(email: string, token: string): Promise<void>;
+	sendPasswordChanged(email: string): Promise<void>;
 }

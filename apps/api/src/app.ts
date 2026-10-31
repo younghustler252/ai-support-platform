@@ -2,7 +2,7 @@ import express from "express";
 import cors from "cors";
 import helmet from "helmet";
 
-import { env } from "./config/env.js";
+import { corsOrigins, trustProxy } from "./config/env.js";
 import { container } from "./container/index.js";
 import { apiRouter } from "./routes/index.js";
 import { NotFoundError } from "./foundation/errors/app-error.js";
@@ -14,15 +14,19 @@ import type { PrismaClient } from "./generated/prisma/client.js";
 export function createApp() {
 	const app = express();
 
+	app.set("trust proxy", trustProxy);
 	app.disable("x-powered-by");
 	app.use(helmet());
 	app.use(
 		cors({
-			origin: env.CORS_ORIGINS.split(",").map((origin) => origin.trim()),
+			origin: [...corsOrigins],
+			credentials: true,
+			exposedHeaders: ["X-Request-Id", "Retry-After"],
+			maxAge: 600,
 		}),
 	);
-	app.use(express.json({ limit: "64kb" }));
 	app.use(requestScope(container));
+	app.use(express.json({ limit: "64kb" }));
 
 	app.get("/health", (_request, response) => {
 		response.json({ status: "ok" });

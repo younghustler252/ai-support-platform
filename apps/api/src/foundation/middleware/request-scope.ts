@@ -33,6 +33,7 @@ export function requestScope(root: AwilixContainer): RequestHandler {
 				path: request.path,
 				statusCode: response.statusCode,
 				durationMs: Date.now() - context.startedAt,
+				userId: context.userId,
 			});
 			void scope.dispose().catch((error: unknown) => {
 				requestLogger.error("request.scope_dispose_failed", { error });

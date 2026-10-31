@@ -1,7 +1,26 @@
 import { createHash, randomBytes } from "node:crypto";
 import { SignJWT, jwtVerify } from "jose";
-import { env } from "../../../config/env.js";
+import { authConfig } from "../../../config/auth.js";
 import { AuthenticationError } from "../../../foundation/errors/app-error.js";
+
+interface SigningKey {
+	id: string;
+	secret: Uint8Array;
+}
+
+function signingKey(secret: string): SigningKey {
+	return {
+		id: createHash("sha256").update(secret).digest("hex").slice(0, 12),
+		secret: new TextEncoder().encode(secret),
+	};
+}
+
+const currentKey = signingKey(authConfig.jwt.secret);
+const verificationKeys = new Map<string, Uint8Array>([[currentKey.id, currentKey.secret]]);
+if (authConfig.jwt.previousSecret) {
+	const previousKey = signingKey(authConfig.jwt.previousSecret);
+	verificationKeys.set(previousKey.id, previousKey.secret);
+}
 
 export class TokenService {
 	generate(): string {
@@ -13,19 +32,31 @@ export class TokenService {
 	}
 
 	async signAccess(userId: string, sessionId: string): Promise<string> {
-		return new SignJWT({ sid: sessionId }).setProtectedHeader({ alg: "HS256" })
-			.setSubject(userId).setIssuer("supportai-api").setAudience("supportai")
-			.setIssuedAt().setExpirationTime("15m")
-			.sign(new TextEncoder().encode(env.AUTH_JWT_SECRET));
+		const issuedAt = Math.floor(Date.now() / 1000);
+		return new SignJWT({ sid: sessionId })
+			.setProtectedHeader({ alg: "HS256", kid: currentKey.id })
+			.setSubject(userId)
+			.setIssuer(authConfig.jwt.issuer)
+			.setAudience(authConfig.jwt.audience)
+			.setIssuedAt(issuedAt)
+			.setExpirationTime(issuedAt + authConfig.accessTtlSeconds)
+			.sign(currentKey.secret);
 	}
 
 	async verifyAccess(header?: string): Promise<{ userId: string; sessionId: string }> {
-		if (!header?.startsWith("Bearer ")) throw new AuthenticationError();
+		const match = header ? /^Bearer\s+(\S+)$/i.exec(header) : null;
+		if (!match) throw new AuthenticationError();
 		try {
-			const { payload } = await jwtVerify(header.slice(7), new TextEncoder().encode(env.AUTH_JWT_SECRET), {
-				issuer: "supportai-api", audience: "supportai", algorithms: ["HS256"],
-			});
-			if (!payload.sub || typeof payload.sid !== "string") throw new AuthenticationError();
+			const { payload } = await jwtVerify(
+				match[1] as string,
+				async (protectedHeader) => {
+					const secret = typeof protectedHeader.kid === "string" ? verificationKeys.get(protectedHeader.kid) : undefined;
+					if (!secret) throw new Error("Unknown signing key");
+					return secret;
+				},
+				{ issuer: authConfig.jwt.issuer, audience: authConfig.jwt.audience, algorithms: ["HS256"] },
+			);
+			if (!payload.sub || typeof payload.sid !== "string") throw new Error("Malformed access token");
 			return { userId: payload.sub, sessionId: payload.sid };
 		} catch {
 			throw new AuthenticationError();

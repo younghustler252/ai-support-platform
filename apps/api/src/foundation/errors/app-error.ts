@@ -48,3 +48,15 @@ export class TooManyRequestsError extends AppError {
 		super("RATE_LIMITED", message, 429);
 	}
 }
+
+export class RefreshConflictError extends AppError {
+	constructor() {
+		super("REFRESH_CONFLICT", "The refresh token was just rotated. Retry with the latest cookie.", 409);
+	}
+}
+
+export class EmailNotVerifiedError extends AppError {
+	constructor() {
+		super("EMAIL_NOT_VERIFIED", "Email verification required", 403);
+	}
+}

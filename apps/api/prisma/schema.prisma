@@ -17,6 +17,18 @@ enum AuthTokenType {
   PASSWORD_RESET
 }
 
+enum SessionRevokeReason {
+  LOGOUT
+  LOGOUT_ALL
+  ROTATED
+  REUSE_DETECTED
+  PASSWORD_CHANGED
+  PASSWORD_RESET
+  USER_DISABLED
+  SESSION_LIMIT
+  REVOKED_BY_USER
+}
+
 enum Realm {
   PLATFORM
   ORGANIZATION
@@ -61,20 +73,22 @@ enum NotificationChannel {
 }
 
 model User {
-  id              String                   @id @default(uuid())
-  email           String                   @unique
-  displayName     String?
-  passwordHash    String?
-  emailVerifiedAt DateTime?
-  authVersion     Int                      @default(0)
-  createdAt       DateTime                 @default(now())
-  updatedAt       DateTime                 @updatedAt
-  identities      AuthIdentity[]
-  sessions        AuthSession[]
-  authTokens      AuthToken[]
-  organizations   OrganizationMembership[]
-  applications    ApplicationMembership[]
-  auditLogs       AuditLog[]
+  id                String                   @id @default(uuid())
+  email             String                   @unique
+  displayName       String?
+  passwordHash      String?
+  emailVerifiedAt   DateTime?
+  passwordChangedAt DateTime?
+  lastLoginAt       DateTime?
+  disabledAt        DateTime?
+  createdAt         DateTime                 @default(now())
+  updatedAt         DateTime                 @updatedAt
+  identities        AuthIdentity[]
+  sessions          AuthSession[]
+  authTokens        AuthToken[]
+  organizations     OrganizationMembership[]
+  applications      ApplicationMembership[]
+  auditLogs         AuditLog[]
 }
 
 model AuthIdentity {
@@ -91,17 +105,22 @@ model AuthIdentity {
 }
 
 model AuthSession {
-  id               String       @id @default(uuid())
-  userId           String
-  refreshTokenHash String       @unique
-  expiresAt        DateTime
-  revokedAt        DateTime?
-  createdAt        DateTime     @default(now())
-  lastUsedAt       DateTime?
-  userAgent        String?
-  user             User         @relation(fields: [userId], references: [id], onDelete: Cascade)
+  id                String               @id @default(uuid())
+  userId            String
+  familyId          String
+  refreshTokenHash  String               @unique
+  expiresAt         DateTime
+  absoluteExpiresAt DateTime
+  revokedAt         DateTime?
+  revokedReason     SessionRevokeReason?
+  createdAt         DateTime             @default(now())
+  lastUsedAt        DateTime?
+  userAgent         String?
+  ipAddress         String?
+  user              User                 @relation(fields: [userId], references: [id], onDelete: Cascade)
 
   @@index([userId, revokedAt])
+  @@index([familyId])
   @@index([expiresAt])
 }
 
@@ -383,4 +402,6 @@ model AuditLog {
   actor        User?    @relation(fields: [actorUserId], references: [id])
 
   @@index([resourceType, resourceId, createdAt])
+  @@index([actorUserId, createdAt])
+  @@index([action, createdAt])
 }
