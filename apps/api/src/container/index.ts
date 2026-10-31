@@ -4,9 +4,14 @@ import { MemoryRateLimiter } from "../foundation/rate-limit/rate-limiter.js";
 import { prisma } from "../infrastructure/database/prisma.js";
 import { createEmailTransport } from "../infrastructure/email/email-transport.js";
 import { InProcessEmailQueue } from "../infrastructure/email/in-process-email-queue.js";
+import { registerApiKeys } from "../modules/api-keys/api-keys.container.js";
+import { registerApplications } from "../modules/applications/applications.container.js";
 import { registerAudit } from "../modules/audit/audit.container.js";
 import { registerAuth } from "../modules/auth/auth.container.js";
+import { registerMemberships } from "../modules/memberships/memberships.container.js";
+import { registerOrganizations } from "../modules/organizations/organizations.container.js";
 import { registerPlatformSettings } from "../modules/platform-settings/platform-settings.container.js";
+import { registerTenancy } from "../modules/tenancy/tenancy.container.js";
 
 export const container = createContainer({
 	injectionMode: InjectionMode.PROXY,
@@ -25,3 +30,8 @@ container.register({
 registerPlatformSettings(container);
 registerAudit(container);
 registerAuth(container);
+registerTenancy(container);
+registerOrganizations(container);
+registerMemberships(container);
+registerApplications(container);
+registerApiKeys(container);

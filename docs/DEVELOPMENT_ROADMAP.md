@@ -32,10 +32,10 @@ Status legend: [x] implemented and confirmed; [ ] pending; [~] implemented but a
 - [ ] Google sign-in (schema reserved)
 
 ## Milestone 4 — Organizations and Applications
-- [ ] Organization creation, membership and invitations
-- [ ] Application creation, membership and configuration
-- [ ] API key issuance, hashing and revocation
-- [ ] Tenant boundary integration tests
+- [~] Organization creation, membership and invitations (implemented, awaiting local verification)
+- [~] Application creation, membership and configuration (implemented, awaiting local verification)
+- [~] API key issuance, hashing and revocation (implemented, awaiting local verification)
+- [~] Tenant boundary integration tests (written, need a migrated TEST_DATABASE_URL to run)
 
 ## Milestone 5 — Dynamic RBAC
 - [ ] Permission catalog and protected default roles

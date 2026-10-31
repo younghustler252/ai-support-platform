@@ -36,13 +36,7 @@ export function readRefreshCookie(request: Request): string | undefined {
 	return undefined;
 }
 
-export function validatedBody<T>(response: Response): T {
-	return response.locals.validatedBody as T;
-}
-
-export function validatedParams<T>(response: Response): T {
-	return response.locals.validatedParams as T;
-}
+export { validatedBody, validatedParams } from "../../../foundation/http/locals.js";
 
 export function authContext(response: Response): AuthContext {
 	return response.locals.auth as AuthContext;

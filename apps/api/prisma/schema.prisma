@@ -51,6 +51,12 @@ enum MembershipStatus {
   REMOVED
 }
 
+enum TenantRole {
+  OWNER
+  ADMIN
+  MEMBER
+}
+
 enum ConversationStatus {
   AI_ACTIVE
   WAITING_FOR_AGENT
@@ -139,15 +145,19 @@ model AuthToken {
 }
 
 model Organization {
-  id           String                   @id @default(uuid())
-  name         String
-  slug         String                   @unique
-  createdAt    DateTime                 @default(now())
-  memberships  OrganizationMembership[]
-  applications Application[]
-  roles        Role[]
-  planId       String?
-  plan         Plan?                    @relation(fields: [planId], references: [id])
+  id              String                   @id @default(uuid())
+  name            String
+  slug            String                   @unique
+  createdByUserId String?
+  createdAt       DateTime                 @default(now())
+  updatedAt       DateTime                 @updatedAt
+  archivedAt      DateTime?
+  memberships     OrganizationMembership[]
+  invitations     Invitation[]
+  applications    Application[]
+  roles           Role[]
+  planId          String?
+  plan            Plan?                    @relation(fields: [planId], references: [id])
 }
 
 model OrganizationMembership {
@@ -155,12 +165,34 @@ model OrganizationMembership {
   organizationId String
   userId         String
   status         MembershipStatus @default(INVITED)
+  role           TenantRole       @default(MEMBER)
+  createdAt      DateTime         @default(now())
+  updatedAt      DateTime         @updatedAt
   organization   Organization     @relation(fields: [organizationId], references: [id])
   user           User             @relation(fields: [userId], references: [id])
   roles          MembershipRole[]
 
   @@unique([organizationId, userId])
   @@index([userId, status])
+  @@index([organizationId, role])
+}
+
+model Invitation {
+  id              String       @id @default(uuid())
+  organizationId  String
+  email           String
+  role            TenantRole
+  tokenHash       String       @unique
+  invitedByUserId String?
+  expiresAt       DateTime
+  acceptedAt      DateTime?
+  revokedAt       DateTime?
+  createdAt       DateTime     @default(now())
+  organization    Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+
+  @@index([organizationId, email])
+  @@index([email])
+  @@index([expiresAt])
 }
 
 model Application {
@@ -168,7 +200,11 @@ model Application {
   organizationId String
   name           String
   slug           String
+  description    String?
+  allowedOrigins String[]                @default([])
   createdAt      DateTime                @default(now())
+  updatedAt      DateTime                @updatedAt
+  archivedAt     DateTime?
   organization   Organization            @relation(fields: [organizationId], references: [id])
   members        ApplicationMembership[]
   settings       ApplicationSetting?
@@ -189,11 +225,15 @@ model ApplicationMembership {
   applicationId String
   userId        String
   status        MembershipStatus            @default(INVITED)
+  role          TenantRole                  @default(MEMBER)
+  createdAt     DateTime                    @default(now())
+  updatedAt     DateTime                    @updatedAt
   application   Application                 @relation(fields: [applicationId], references: [id])
   user          User                        @relation(fields: [userId], references: [id])
   roles         ApplicationMembershipRole[]
 
   @@unique([applicationId, userId])
+  @@index([userId, status])
 }
 
 model Role {
@@ -264,14 +304,18 @@ model ApplicationSetting {
 }
 
 model ApiKey {
-  id            String      @id @default(uuid())
-  applicationId String
-  prefix        String
-  keyHash       String      @unique
-  scopes        String[]
-  revokedAt     DateTime?
-  createdAt     DateTime    @default(now())
-  application   Application @relation(fields: [applicationId], references: [id], onDelete: Cascade)
+  id              String      @id @default(uuid())
+  applicationId   String
+  name            String
+  prefix          String
+  keyHash         String      @unique
+  scopes          String[]
+  createdByUserId String?
+  lastUsedAt      DateTime?
+  expiresAt       DateTime?
+  revokedAt       DateTime?
+  createdAt       DateTime    @default(now())
+  application     Application @relation(fields: [applicationId], references: [id], onDelete: Cascade)
 
   @@index([applicationId, revokedAt])
 }

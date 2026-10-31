@@ -49,6 +49,12 @@ export class TooManyRequestsError extends AppError {
 	}
 }
 
+export class LimitExceededError extends AppError {
+	constructor(message = "A usage limit has been reached") {
+		super("LIMIT_EXCEEDED", message, 403);
+	}
+}
+
 export class RefreshConflictError extends AppError {
 	constructor() {
 		super("REFRESH_CONFLICT", "The refresh token was just rotated. Retry with the latest cookie.", 409);

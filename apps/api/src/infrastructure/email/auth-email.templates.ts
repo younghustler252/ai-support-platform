@@ -1,5 +1,6 @@
 import { authConfig } from "../../config/auth.js";
 import { platformDefaults } from "../../config/defaults.js";
+import { tenancyConfig } from "../../config/tenancy.js";
 
 export interface EmailContent {
 	subject: string;
@@ -33,6 +34,10 @@ function actionUrl(path: string, token: string): string {
 
 function durationLabel(ms: number): string {
 	const minutes = Math.round(ms / 60000);
+	if (minutes >= 1440 && minutes % 1440 === 0) {
+		const days = minutes / 1440;
+		return days === 1 ? "1 day" : `${days} days`;
+	}
 	if (minutes >= 60 && minutes % 60 === 0) {
 		const hours = minutes / 60;
 		return hours === 1 ? "1 hour" : `${hours} hours`;
@@ -92,5 +97,17 @@ export function passwordChangedEmail(): EmailContent {
 			`The password for your ${brand} account was just changed and you were signed out of your other devices.`,
 			"If this was not you, reset your password immediately and contact support.",
 		],
+	});
+}
+
+export function invitationEmail(input: { organizationName: string; inviterName: string; token: string }): EmailContent {
+	return render({
+		subject: `${input.inviterName} invited you to join ${input.organizationName} on ${brand}`,
+		heading: `Join ${input.organizationName}`,
+		paragraphs: [
+			`${input.inviterName} invited you to join ${input.organizationName} on ${brand}.`,
+			`Sign in with this email address to accept. The invitation expires in ${durationLabel(tenancyConfig.invitationTtlMs)}. If you were not expecting it, you can ignore this message.`,
+		],
+		action: { label: "Accept invitation", url: actionUrl("/accept-invitation", input.token) },
 	});
 }
