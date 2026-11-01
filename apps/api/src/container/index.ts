@@ -6,6 +6,8 @@ import { createEmailTransport } from "../infrastructure/email/email-transport.js
 import { InProcessEmailQueue } from "../infrastructure/email/in-process-email-queue.js";
 import { registerApiKeys } from "../modules/api-keys/api-keys.container.js";
 import { registerApplications } from "../modules/applications/applications.container.js";
+import { registerConversations } from "../modules/conversations/conversations.container.js";
+import { registerCustomers } from "../modules/customers/customers.container.js";
 import { registerAudit } from "../modules/audit/audit.container.js";
 import { registerAuth } from "../modules/auth/auth.container.js";
 import { registerMemberships } from "../modules/memberships/memberships.container.js";
@@ -37,3 +39,7 @@ registerMemberships(container);
 registerApplications(container);
 registerApiKeys(container);
 registerRbac(container);
+registerCustomers(container);
+registerConversations(container);
+
+

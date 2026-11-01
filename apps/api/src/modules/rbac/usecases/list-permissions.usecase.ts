@@ -1,4 +1,4 @@
-import { grantScopeFor, permissionCatalog, type PermissionDefinition } from "../permission-catalog.js";
+import { allowedGrantScopes, grantScopeFor, permissionCatalog, type PermissionDefinition } from "../permission-catalog.js";
 import type { RoleTarget } from "../rbac.types.js";
 
 export interface PermissionView {
@@ -6,6 +6,7 @@ export interface PermissionView {
 	description: string;
 	realm: PermissionDefinition["realm"];
 	scope: string;
+	scopes: string[];
 }
 
 export class ListPermissionsUseCase {
@@ -13,7 +14,15 @@ export class ListPermissionsUseCase {
 		return permissionCatalog.flatMap((definition) => {
 			const scope = grantScopeFor(target.realm, definition);
 			if (!definition.delegable || !scope) return [];
-			return [{ code: definition.code, description: definition.description, realm: definition.realm, scope }];
+			return [
+				{
+					code: definition.code,
+					description: definition.description,
+					realm: definition.realm,
+					scope,
+					scopes: allowedGrantScopes(target.realm, definition),
+				},
+			];
 		});
 	}
 }

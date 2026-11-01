@@ -23,3 +23,11 @@ Migration: `20261031120000_tenancy_foundation`. Dynamic RBAC tables stay provisi
 - `MembershipRole`, `ApplicationMembershipRole`: assignments with `assignedByUserId` and `createdAt`.
 
 Migration: `20261101090000_dynamic_rbac`. The catalog sync runs when the server starts and must have run before roles can be created.
+
+## Customers and conversations (Milestone 6)
+
+- `Customer` is unique per application by `externalId` and carries optional email and flat metadata. Deleting a customer cascades to its conversations.
+- `Conversation` stores status, `assigneeUserId`, `lastMessageAt`, `resolvedAt` and `closedAt`, with indexes for the inbox (`applicationId, status, lastMessageAt`), per-agent queues and per-customer lookups.
+- `Message` has `senderUserId` and an `internal` flag for private agent notes; messages are paged by `(createdAt, id)`.
+- `ConversationAssignment` keeps assignment history with `assignedByUserId` and an `endReason` (REASSIGNED, TRANSFERRED, RELEASED, RESOLVED, CLOSED).
+- Every state change locks the conversation row (`SELECT ... FOR UPDATE`) so concurrent claims cannot both succeed.

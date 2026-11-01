@@ -6,7 +6,7 @@ import { isUniqueViolation } from "../../auth/auth.utils.js";
 import type { RoleTarget, RoleView } from "../rbac.types.js";
 import type { IRoleRepository } from "../repositories/role.repository.interface.js";
 import { assertHolds } from "../services/grant-guard.js";
-import { resolveGrants } from "../services/role-permissions.js";
+import { resolveGrants, type PermissionRequest } from "../services/role-permissions.js";
 import { roleAuditMetadata, type RoleActor } from "./role-usecase.shared.js";
 
 interface Input {
@@ -14,7 +14,7 @@ interface Input {
 	actor: RoleActor;
 	name: string;
 	description?: string | null;
-	permissions: string[];
+	permissions: PermissionRequest[];
 }
 
 export class CreateRoleUseCase {

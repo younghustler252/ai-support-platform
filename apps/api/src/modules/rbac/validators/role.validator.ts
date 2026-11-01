@@ -4,11 +4,12 @@ import { permissionCatalog } from "../permission-catalog.js";
 
 const name = z.string().trim().min(2).max(60);
 const description = z.string().trim().max(300);
-const permissions = z
-	.array(z.string().trim().min(1).max(80))
-	.min(1)
-	.max(permissionCatalog.length)
-	.transform((codes) => [...new Set(codes)]);
+const scope = z.enum(["ASSIGNED", "APPLICATION", "ORGANIZATION"]);
+const permissionRequest = z.union([
+	z.string().trim().min(1).max(80),
+	z.strictObject({ code: z.string().trim().min(1).max(80), scope: scope.optional() }),
+]);
+const permissions = z.array(permissionRequest).min(1).max(permissionCatalog.length * 2);
 
 export const createRoleSchema = z.strictObject({
 	name,

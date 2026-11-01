@@ -10,6 +10,8 @@ import { MemoryRateLimiter } from "../src/foundation/rate-limit/rate-limiter.js"
 import { apiKeyRouter } from "../src/modules/api-keys/routes/api-key.routes.js";
 import { applicationRouter } from "../src/modules/applications/routes/application.routes.js";
 import { membershipRouter } from "../src/modules/memberships/routes/membership.routes.js";
+import { conversationRouter } from "../src/modules/conversations/routes/conversation.routes.js";
+import { customerRouter } from "../src/modules/customers/routes/customer.routes.js";
 import { roleRouter } from "../src/modules/rbac/routes/role.routes.js";
 import { organizationRouter } from "../src/modules/organizations/routes/organization.routes.js";
 import type { ApiKeyPrincipal } from "../src/modules/api-keys/api-keys.types.js";
@@ -21,6 +23,8 @@ const user = "33333333-3333-4333-8333-333333333333";
 const key = "44444444-4444-4444-8444-444444444444";
 const invitation = "55555555-5555-4555-8555-555555555555";
 const role = "66666666-6666-4666-8666-666666666666";
+const conversationId = "77777777-7777-4777-8777-777777777777";
+const customerId = "88888888-8888-4888-8888-888888888888";
 
 const identity = {
 	user: { id: "user-1", email: "user@example.com", displayName: "User", emailVerifiedAt: new Date() },
@@ -76,6 +80,9 @@ function buildApp(options: { deny?: Error; authenticated?: boolean } = {}) {
 		applicationController: asValue(controller),
 		apiKeyController: asValue(controller),
 		roleController: asValue(controller),
+		customerController: asValue(controller),
+		conversationController: asValue(controller),
+		serviceConversationController: asValue(controller),
 		getCurrentUserUseCase: asValue({
 			execute: async () => {
 				if (options.authenticated === false) throw new AuthenticationError("Authentication required");
@@ -98,6 +105,8 @@ function buildApp(options: { deny?: Error; authenticated?: boolean } = {}) {
 	server.use(applicationRouter());
 	server.use(apiKeyRouter());
 	server.use(roleRouter());
+	server.use(customerRouter());
+	server.use(conversationRouter());
 	server.use(errorHandler);
 	return { server, calls, hits: () => controllerHits };
 }
@@ -143,6 +152,20 @@ const routes: Array<{ method: string; path: string; scope: Call["scope"]; action
 	{ method: "DELETE", path: `${a}/roles/${role}`, scope: "application", action: "application.role.manage" },
 	{ method: "PUT", path: `${a}/roles/${role}/members/${user}`, scope: "application", action: "application.role.assign" },
 	{ method: "DELETE", path: `${a}/roles/${role}/members/${user}`, scope: "application", action: "application.role.assign" },
+	{ method: "GET", path: `${a}/customers`, scope: "application", action: "customer.read" },
+	{ method: "GET", path: `${a}/customers/${customerId}`, scope: "application", action: "customer.read" },
+	{ method: "PATCH", path: `${a}/customers/${customerId}`, scope: "application", action: "customer.manage" },
+	{ method: "GET", path: `${a}/conversations`, scope: "application", action: "conversation.read" },
+	{ method: "GET", path: `${a}/conversations/${conversationId}`, scope: "application", action: "conversation.read" },
+	{ method: "GET", path: `${a}/conversations/${conversationId}/messages`, scope: "application", action: "conversation.read" },
+	{ method: "POST", path: `${a}/conversations/${conversationId}/messages`, scope: "application", action: "conversation.reply" },
+	{ method: "POST", path: `${a}/conversations/${conversationId}/claim`, scope: "application", action: "conversation.claim" },
+	{ method: "POST", path: `${a}/conversations/${conversationId}/assign`, scope: "application", action: "conversation.assign" },
+	{ method: "POST", path: `${a}/conversations/${conversationId}/transfer`, scope: "application", action: "conversation.transfer" },
+	{ method: "POST", path: `${a}/conversations/${conversationId}/release`, scope: "application", action: "conversation.transfer" },
+	{ method: "POST", path: `${a}/conversations/${conversationId}/resolve`, scope: "application", action: "conversation.resolve" },
+	{ method: "POST", path: `${a}/conversations/${conversationId}/reopen`, scope: "application", action: "conversation.resolve" },
+	{ method: "POST", path: `${a}/conversations/${conversationId}/close`, scope: "application", action: "conversation.resolve" },
 ];
 
 function send(baseUrl: string, method: string, path: string, headers: Record<string, string> = {}, body: unknown = {}) {
@@ -222,6 +245,48 @@ test("the service endpoint accepts only a valid api key and is not cached", asyn
 		const authorised = await fetch(`${baseUrl}/service/application`, { headers: { Authorization: "Bearer sak_whatever" } });
 		assert.equal(authorised.status, 200);
 		assert.equal(authorised.headers.get("cache-control"), "no-store");
+		assert.equal(hits(), 1);
+	});
+});
+
+test("service conversation and customer endpoints need an api key with the right scope", async () => {
+	const { server, hits } = buildApp();
+	await withServer(server, async (baseUrl) => {
+		const calls: Array<{ method: string; path: string; body?: unknown }> = [
+			{ method: "PUT", path: "/service/customers/user-1", body: {} },
+			{ method: "POST", path: "/service/conversations", body: { customer: { externalId: "user-1" }, message: "hi" } },
+			{ method: "GET", path: `/service/conversations/${conversationId}` },
+			{ method: "GET", path: `/service/conversations/${conversationId}/messages` },
+			{ method: "POST", path: `/service/conversations/${conversationId}/messages`, body: { body: "hi" } },
+			{ method: "POST", path: `/service/conversations/${conversationId}/escalate`, body: {} },
+		];
+		for (const call of calls) {
+			const anonymous = await fetch(`${baseUrl}${call.path}`, {
+				method: call.method,
+				headers: { "Content-Type": "application/json" },
+				body: call.body === undefined ? undefined : JSON.stringify(call.body),
+			});
+			assert.equal(anonymous.status, 401, `${call.method} ${call.path}`);
+			assert.equal(anonymous.headers.get("cache-control"), "no-store");
+		}
+		assert.equal(hits(), 0);
+
+		const headers = { "Content-Type": "application/json", Authorization: "Bearer sak_whatever" };
+		const lacking = await fetch(`${baseUrl}/service/conversations`, {
+			method: "POST",
+			headers,
+			body: JSON.stringify({ customer: { externalId: "user-1" }, message: "hi" }),
+		});
+		assert.equal(lacking.status, 403);
+		assert.equal(hits(), 0);
+
+		const permitted = await fetch(`${baseUrl}/service/conversations/${conversationId}/messages`, {
+			method: "POST",
+			headers,
+			body: JSON.stringify({ body: "hi" }),
+		});
+		assert.equal(permitted.status, 200);
+		assert.equal(permitted.headers.get("cache-control"), "no-store");
 		assert.equal(hits(), 1);
 	});
 });

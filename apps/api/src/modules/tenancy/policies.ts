@@ -42,6 +42,14 @@ export const applicationPolicy = {
 	"application.role.read": { minimum: "ADMIN" },
 	"application.role.manage": { minimum: "ADMIN" },
 	"application.role.assign": { minimum: "ADMIN" },
+	"customer.read": { minimum: "MEMBER" },
+	"customer.manage": { minimum: "ADMIN" },
+	"conversation.read": { minimum: "MEMBER" },
+	"conversation.reply": { minimum: "MEMBER" },
+	"conversation.claim": { minimum: "MEMBER" },
+	"conversation.transfer": { minimum: "MEMBER" },
+	"conversation.resolve": { minimum: "MEMBER" },
+	"conversation.assign": { minimum: "ADMIN" },
 } as const satisfies Record<string, ApplicationRule>;
 
 export type ApplicationAction = keyof typeof applicationPolicy;

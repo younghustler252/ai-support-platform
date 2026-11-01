@@ -44,9 +44,9 @@ Status legend: [x] implemented and confirmed; [ ] pending; [~] implemented but a
 - [~] Cross-tenant and least-privilege tests (written, integration test needs TEST_DATABASE_URL)
 
 ## Milestone 6 — Customers and Conversations
-- [ ] Application-scoped customers and conversations
-- [ ] Messages, assignment, transfer and resolution
-- [ ] Human support API and isolation tests
+- [~] Application-scoped customers and conversations (implemented, not yet run against a database)
+- [~] Messages, assignment, transfer and resolution (state machine unit tested; repository needs an integration run)
+- [~] Human support API and isolation tests (route policy and use case tests written; flow integration test pending)
 
 ## Milestone 7 — Knowledge and AI
 - [ ] Knowledge management and retrieval

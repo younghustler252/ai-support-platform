@@ -32,6 +32,7 @@ export interface PermissionDefinition {
 	description: string;
 	delegable: boolean;
 	requiredScope: PermissionScopeName;
+	narrowScopes: PermissionScopeName[];
 }
 
 const organizationDescriptions: Record<OrganizationAction, string> = {
@@ -59,6 +60,21 @@ const applicationDescriptions: Record<ApplicationAction, string> = {
 	"application.role.read": "View application roles and their assignments",
 	"application.role.manage": "Create, edit and delete application roles",
 	"application.role.assign": "Assign application roles to members",
+	"customer.read": "View customers",
+	"customer.manage": "Edit customer details",
+	"conversation.read": "View conversations and their messages",
+	"conversation.reply": "Reply to customers and add internal notes",
+	"conversation.claim": "Take unassigned conversations",
+	"conversation.transfer": "Release or transfer conversations to another agent",
+	"conversation.resolve": "Resolve, reopen and close conversations",
+	"conversation.assign": "Assign conversations to any agent",
+};
+
+const narrowScopesByCode: Record<string, PermissionScopeName[]> = {
+	"conversation.read": ["ASSIGNED"],
+	"conversation.reply": ["ASSIGNED"],
+	"conversation.transfer": ["ASSIGNED"],
+	"conversation.resolve": ["ASSIGNED"],
 };
 
 const nonDelegable = new Set<string>(["organization.archive", "application.archive"]);
@@ -70,13 +86,15 @@ export const permissionCatalog: readonly PermissionDefinition[] = [
 		description: organizationDescriptions[code],
 		delegable: !nonDelegable.has(code),
 		requiredScope: "ORGANIZATION" as const,
+		narrowScopes: [] as PermissionScopeName[],
 	})),
 	...(Object.keys(applicationPolicy) as ApplicationAction[]).map((code) => ({
 		code,
 		realm: "APPLICATION" as const,
 		description: applicationDescriptions[code],
 		delegable: !nonDelegable.has(code),
-		requiredScope: "APPLICATION" as const,
+		requiredScope: (narrowScopesByCode[code]?.[0] ?? "APPLICATION") as PermissionScopeName,
+		narrowScopes: narrowScopesByCode[code] ?? [],
 	})),
 ];
 
@@ -88,9 +106,21 @@ export function findPermission(code: string): PermissionDefinition | undefined {
 
 export type RoleRealm = PermissionRealm;
 
-export function grantScopeFor(roleRealm: RoleRealm, permission: PermissionDefinition): PermissionScopeName | null {
-	if (roleRealm === "ORGANIZATION") return "ORGANIZATION";
-	return permission.realm === "APPLICATION" ? "APPLICATION" : null;
+export function grantScopeFor(
+	roleRealm: RoleRealm,
+	permission: PermissionDefinition,
+	requested?: PermissionScopeName,
+): PermissionScopeName | null {
+	const wide: PermissionScopeName | null =
+		roleRealm === "ORGANIZATION" ? "ORGANIZATION" : permission.realm === "APPLICATION" ? "APPLICATION" : null;
+	if (!wide) return null;
+	if (requested === undefined || requested === wide) return wide;
+	return permission.narrowScopes.includes(requested) ? requested : null;
+}
+
+export function allowedGrantScopes(roleRealm: RoleRealm, permission: PermissionDefinition): PermissionScopeName[] {
+	const wide = grantScopeFor(roleRealm, permission);
+	return wide ? [...permission.narrowScopes, wide] : [];
 }
 
 export interface SystemRoleDefinition {

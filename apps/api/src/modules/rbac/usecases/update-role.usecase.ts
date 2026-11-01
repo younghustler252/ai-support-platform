@@ -5,14 +5,14 @@ import { isUniqueViolation } from "../../auth/auth.utils.js";
 import type { RoleTarget, RoleView } from "../rbac.types.js";
 import type { IRoleRepository } from "../repositories/role.repository.interface.js";
 import { assertHolds } from "../services/grant-guard.js";
-import { resolveGrants } from "../services/role-permissions.js";
+import { resolveGrants, type PermissionRequest } from "../services/role-permissions.js";
 import { requireCustomRole, roleAuditMetadata, type RoleActor } from "./role-usecase.shared.js";
 
 interface Input {
 	target: RoleTarget;
 	actor: RoleActor;
 	roleId: string;
-	patch: { name?: string; description?: string | null; permissions?: string[] };
+	patch: { name?: string; description?: string | null; permissions?: PermissionRequest[] };
 }
 
 export class UpdateRoleUseCase {

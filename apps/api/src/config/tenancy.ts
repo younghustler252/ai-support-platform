@@ -35,7 +35,9 @@ export const tenancyConfig = {
 		allowedOriginsPerApplication: 20,
 		customRolesPerScope: 20,
 		rolesPerMembership: 10,
+		openConversationsPerCustomer: 5,
 	},
+	messageBodyMaxLength: 10_000,
 	invitationTtlMs: 7 * DAY,
 	apiKey: {
 		prefix: "sak",
@@ -50,6 +52,8 @@ export const tenancyConfig = {
 		acceptInvitation: { limit: 10, windowMs: 15 * MINUTE },
 		manageApiKeys: { limit: 30, windowMs: HOUR },
 		manageRoles: { limit: 60, windowMs: HOUR },
+		sendAgentMessage: { limit: 120, windowMs: MINUTE },
+		sendMessage: { limit: 120, windowMs: MINUTE },
 		apiKeyRequests: { limit: 600, windowMs: MINUTE },
 		apiKeyIp: { limit: 300, windowMs: MINUTE },
 	},

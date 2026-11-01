@@ -15,7 +15,9 @@ The permission catalog (`modules/rbac/permission-catalog.ts`) is the single sour
 
 ## Scopes
 
-`OWN < ASSIGNED < TEAM < APPLICATION < ORGANIZATION < ALL`. A grant covers a requirement when its scope is the same or wider. An organization role grants every permission at `ORGANIZATION`, which for an application permission means every application in that organization. An application role grants at `APPLICATION`, meaning that one application. `OWN`, `ASSIGNED` and `TEAM` are reserved for resource checks on conversations and customers in Milestone 6.
+`OWN < ASSIGNED < TEAM < APPLICATION < ORGANIZATION < ALL`. A grant covers a requirement when its scope is the same or wider. An organization role grants every permission at `ORGANIZATION`, which for an application permission means every application in that organization. An application role grants at `APPLICATION`, meaning that one application. `ASSIGNED` is in use from Milestone 6: `conversation.read`, `conversation.reply`, `conversation.transfer` and `conversation.resolve` can be granted at `ASSIGNED`, which limits the holder to conversations currently assigned to them (other conversations return 404). `OWN` and `TEAM` remain reserved.
+
+Support permissions added in Milestone 6: `customer.read`, `customer.manage`, `conversation.read`, `conversation.reply`, `conversation.claim`, `conversation.transfer`, `conversation.resolve` and `conversation.assign`. Assigning or transferring a conversation requires the target user to hold `conversation.reply` in that application.
 
 ## Custom roles
 

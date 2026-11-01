@@ -287,10 +287,39 @@ test("unassigning reports missing assignments and audits removals", async () => 
 test("role bodies are strict, bounded and de-duplicated", () => {
 	const parsed = createRoleSchema.parse({ name: " Support ", permissions: ["member.read", "member.read"] });
 	assert.equal(parsed.name, "Support");
-	assert.deepEqual(parsed.permissions, ["member.read"]);
+	assert.deepEqual(parsed.permissions, ["member.read", "member.read"]);
+	assert.equal(createRoleSchema.safeParse({ name: "Support", permissions: [{ code: "conversation.read", scope: "ASSIGNED" }] }).success, true);
+	assert.equal(createRoleSchema.safeParse({ name: "Support", permissions: [{ code: "conversation.read", scope: "ALL" }] }).success, false);
 	assert.equal(createRoleSchema.safeParse({ name: "x", permissions: ["member.read"] }).success, false);
 	assert.equal(createRoleSchema.safeParse({ name: "Support", permissions: [] }).success, false);
 	assert.equal(createRoleSchema.safeParse({ name: "Support", permissions: ["member.read"], realm: "APPLICATION" }).success, false);
 	assert.equal(updateRoleSchema.safeParse({}).success, false);
 	assert.equal(updateRoleSchema.safeParse({ description: null }).success, true);
+});
+
+test("narrow scopes are only accepted for permissions that support them", () => {
+	const narrow = resolveGrants(appTarget, [{ code: "conversation.read", scope: "ASSIGNED" }]);
+	assert.deepEqual(narrow, [{ code: "conversation.read", scope: "ASSIGNED" }]);
+	assert.deepEqual(resolveGrants(appTarget, ["conversation.read"]), [{ code: "conversation.read", scope: "APPLICATION" }]);
+	assert.deepEqual(resolveGrants(orgTarget, ["conversation.read"]), [{ code: "conversation.read", scope: "ORGANIZATION" }]);
+	assert.deepEqual(resolveGrants(orgTarget, [{ code: "conversation.reply", scope: "ASSIGNED" }]), [{ code: "conversation.reply", scope: "ASSIGNED" }]);
+	assert.throws(() => resolveGrants(appTarget, [{ code: "customer.read", scope: "ASSIGNED" }]), ValidationError);
+	assert.throws(() => resolveGrants(appTarget, [{ code: "conversation.read", scope: "OWN" }]), ValidationError);
+	assert.deepEqual(
+		resolveGrants(appTarget, [{ code: "conversation.read", scope: "ASSIGNED" }, "conversation.read"]),
+		[{ code: "conversation.read", scope: "APPLICATION" }],
+	);
+});
+
+test("support permissions start at application scope for members and routes accept assigned-only grants", () => {
+	const member = applicationGrants({ organizationRole: "MEMBER", organizationCustom: [], applicationRole: "MEMBER", applicationCustom: [] });
+	assert.equal(member["conversation.read"], "APPLICATION");
+	assert.equal(member["conversation.claim"], "APPLICATION");
+	assert.equal(member["conversation.assign"], undefined);
+	assert.equal(member["customer.manage"], undefined);
+
+	assert.equal(findPermission("conversation.read")?.requiredScope, "ASSIGNED");
+	assert.equal(findPermission("conversation.claim")?.requiredScope, "APPLICATION");
+	assert.equal(scopeCovers("ASSIGNED", findPermission("conversation.read")!.requiredScope), true);
+	assert.equal(scopeCovers("ASSIGNED", findPermission("conversation.claim")!.requiredScope), false);
 });

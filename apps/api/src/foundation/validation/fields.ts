@@ -35,3 +35,11 @@ export const originSchema = z
 		}
 		return origin;
 	});
+
+export const limitSchema = z.coerce.number().int().min(1).max(100).default(25);
+export const cursorSchema = z.string().trim().min(1).max(200).optional();
+
+export const metadataSchema = z
+	.record(z.string().min(1).max(64), z.union([z.string().max(500), z.number().finite(), z.boolean(), z.null()]))
+	.refine((value) => Object.keys(value).length <= 20, "At most 20 metadata entries")
+	.refine((value) => JSON.stringify(value).length <= 4000, "Metadata is too large");
