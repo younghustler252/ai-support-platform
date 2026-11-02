@@ -1,3 +1,5 @@
 # knowledge
 
-Status: PLANNED — module boundary reserved. Not implemented, registered, or mounted. Follow route → controller → use case → repository, and add tests, tenant enforcement, permissions and docs when implementing.
+Knowledge base articles per application. Articles are chunked on create and edit, and published articles are searched with Postgres full-text search through the retrieval module.
+
+Permissions: `knowledge.read`, `knowledge.manage`. Service search: `GET /service/knowledge/search` with an API key scoped `knowledge:read`.

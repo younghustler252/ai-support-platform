@@ -336,16 +336,33 @@ model ApiKey {
 }
 
 model KnowledgeArticle {
-  id            String      @id @default(uuid())
+  id            String           @id @default(uuid())
   applicationId String
   title         String
   content       String
   links         Json?
   publishedAt   DateTime?
-  createdAt     DateTime    @default(now())
-  application   Application @relation(fields: [applicationId], references: [id], onDelete: Cascade)
+  createdAt     DateTime         @default(now())
+  updatedAt     DateTime         @updatedAt
+  application   Application      @relation(fields: [applicationId], references: [id], onDelete: Cascade)
+  chunks        KnowledgeChunk[]
 
   @@index([applicationId, publishedAt])
+  @@index([applicationId, updatedAt])
+}
+
+model KnowledgeChunk {
+  id            String                   @id @default(uuid())
+  articleId     String
+  applicationId String
+  position      Int
+  content       String
+  search        Unsupported("tsvector")?
+  article       KnowledgeArticle         @relation(fields: [articleId], references: [id], onDelete: Cascade)
+
+  @@unique([articleId, position])
+  @@index([applicationId])
+  @@index([search], type: Gin)
 }
 
 model Customer {

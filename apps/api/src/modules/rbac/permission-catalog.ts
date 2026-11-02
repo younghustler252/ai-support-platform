@@ -68,6 +68,8 @@ const applicationDescriptions: Record<ApplicationAction, string> = {
 	"conversation.transfer": "Release or transfer conversations to another agent",
 	"conversation.resolve": "Resolve, reopen and close conversations",
 	"conversation.assign": "Assign conversations to any agent",
+	"knowledge.read": "View knowledge base articles",
+	"knowledge.manage": "Create, edit, publish and delete knowledge base articles",
 };
 
 const narrowScopesByCode: Record<string, PermissionScopeName[]> = {

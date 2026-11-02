@@ -50,6 +50,8 @@ export const applicationPolicy = {
 	"conversation.transfer": { minimum: "MEMBER" },
 	"conversation.resolve": { minimum: "MEMBER" },
 	"conversation.assign": { minimum: "ADMIN" },
+	"knowledge.read": { minimum: "MEMBER" },
+	"knowledge.manage": { minimum: "ADMIN" },
 } as const satisfies Record<string, ApplicationRule>;
 
 export type ApplicationAction = keyof typeof applicationPolicy;

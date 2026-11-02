@@ -1,3 +1,3 @@
 # retrieval
 
-Status: PLANNED — module boundary reserved. Not implemented, registered, or mounted. Follow route → controller → use case → repository, and add tests, tenant enforcement, permissions and docs when implementing.
+Turns a customer question into a safe OR-based tsquery and returns ranked passages from published articles of one application. Embeddings can be added later behind `IRetrievalService`.

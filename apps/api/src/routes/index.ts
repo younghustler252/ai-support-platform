@@ -4,6 +4,7 @@ import type { AwilixContainer } from "awilix";
 import { apiKeyRouter } from "../modules/api-keys/routes/api-key.routes.js";
 import { applicationRouter } from "../modules/applications/routes/application.routes.js";
 import { authRouter } from "../modules/auth/routes/auth.routes.js";
+import { knowledgeRouter } from "../modules/knowledge/routes/knowledge.routes.js";
 import { membershipRouter } from "../modules/memberships/routes/membership.routes.js";
 import { conversationRouter } from "../modules/conversations/routes/conversation.routes.js";
 import { customerRouter } from "../modules/customers/routes/customer.routes.js";
@@ -23,6 +24,7 @@ export function apiRouter(container: AwilixContainer): Router {
 	router.use(roleRouter());
 	router.use(customerRouter());
 	router.use(conversationRouter());
+	router.use(knowledgeRouter());
 	
 	
 

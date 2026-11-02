@@ -30,6 +30,10 @@ const envSchema = z.object({
 	AUTH_MAX_ACTIVE_SESSIONS: positive(10),
 	AUTH_EMAIL_API_KEY: z.string().optional(),
 	AUTH_EMAIL_FROM: z.string().optional(),
+	AI_API_KEY: z.string().min(1).optional(),
+	AI_BASE_URL: z.url().default("https://api.openai.com/v1"),
+	AI_MODEL: z.string().min(1).default("gpt-4o-mini"),
+	AI_TIMEOUT_MS: positive(30_000),
 }).superRefine((value, context) => {
 	if (value.AUTH_REFRESH_TTL_DAYS > value.AUTH_SESSION_MAX_DAYS) {
 		context.addIssue({

@@ -10,6 +10,7 @@ import { registerConversations } from "../modules/conversations/conversations.co
 import { registerCustomers } from "../modules/customers/customers.container.js";
 import { registerAudit } from "../modules/audit/audit.container.js";
 import { registerAuth } from "../modules/auth/auth.container.js";
+import { registerKnowledge } from "../modules/knowledge/knowledge.container.js";
 import { registerMemberships } from "../modules/memberships/memberships.container.js";
 import { registerOrganizations } from "../modules/organizations/organizations.container.js";
 import { registerRbac } from "../modules/rbac/rbac.container.js";
@@ -41,5 +42,6 @@ registerApiKeys(container);
 registerRbac(container);
 registerCustomers(container);
 registerConversations(container);
+registerKnowledge(container);
 
 
