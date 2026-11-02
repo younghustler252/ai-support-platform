@@ -124,3 +124,10 @@ test("agents reply only to assigned conversations and may leave notes until clos
 	assert.equal(canPost(state("CLOSED"), "customer").ok, false);
 	assert.equal(canPost(state("RESOLVED"), "customer").ok, true);
 });
+
+test("AI may only post while the conversation is handled by AI", () => {
+	assert.equal(canPost(state("AI_ACTIVE"), "ai").ok, true);
+	for (const status of ["WAITING_FOR_AGENT", "ASSIGNED_TO_AGENT", "RESOLVED", "CLOSED"] as const) {
+		assert.equal(canPost(state(status), "ai").ok, false, status);
+	}
+});

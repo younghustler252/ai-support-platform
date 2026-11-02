@@ -69,6 +69,7 @@ function repository(overrides: Partial<IConversationRepository> = {}): IConversa
 		countOpenForCustomer: async () => 0,
 		createWithMessage: async () => ({ conversation: conversation({ status: "AI_ACTIVE" }), message: message({ sender: "CUSTOMER" }) }),
 		listMessages: async () => ({ items: [], nextCursor: null }),
+		recentMessages: async () => [],
 		appendMessage: async (): Promise<AppendResult> => ({ result: "ok", message: message(), reopened: false }),
 		apply: async (): Promise<TransitionResult> => ({ result: "ok", conversation: conversation(), changed: true, event: "claimed" }),
 		...overrides,

@@ -10,6 +10,8 @@ import { MemoryRateLimiter } from "../src/foundation/rate-limit/rate-limiter.js"
 import { apiKeyRouter } from "../src/modules/api-keys/routes/api-key.routes.js";
 import { applicationRouter } from "../src/modules/applications/routes/application.routes.js";
 import { membershipRouter } from "../src/modules/memberships/routes/membership.routes.js";
+import { aiRouter } from "../src/modules/ai/routes/ai.routes.js";
+import { knowledgeRouter } from "../src/modules/knowledge/routes/knowledge.routes.js";
 import { conversationRouter } from "../src/modules/conversations/routes/conversation.routes.js";
 import { customerRouter } from "../src/modules/customers/routes/customer.routes.js";
 import { roleRouter } from "../src/modules/rbac/routes/role.routes.js";
@@ -24,6 +26,7 @@ const key = "44444444-4444-4444-8444-444444444444";
 const invitation = "55555555-5555-4555-8555-555555555555";
 const role = "66666666-6666-4666-8666-666666666666";
 const conversationId = "77777777-7777-4777-8777-777777777777";
+const articleId = "99999999-9999-4999-8999-999999999999";
 const customerId = "88888888-8888-4888-8888-888888888888";
 
 const identity = {
@@ -83,6 +86,8 @@ function buildApp(options: { deny?: Error; authenticated?: boolean } = {}) {
 		customerController: asValue(controller),
 		conversationController: asValue(controller),
 		serviceConversationController: asValue(controller),
+		knowledgeController: asValue(controller),
+		aiController: asValue(controller),
 		getCurrentUserUseCase: asValue({
 			execute: async () => {
 				if (options.authenticated === false) throw new AuthenticationError("Authentication required");
@@ -107,6 +112,8 @@ function buildApp(options: { deny?: Error; authenticated?: boolean } = {}) {
 	server.use(roleRouter());
 	server.use(customerRouter());
 	server.use(conversationRouter());
+	server.use(knowledgeRouter());
+	server.use(aiRouter());
 	server.use(errorHandler);
 	return { server, calls, hits: () => controllerHits };
 }
@@ -166,6 +173,15 @@ const routes: Array<{ method: string; path: string; scope: Call["scope"]; action
 	{ method: "POST", path: `${a}/conversations/${conversationId}/resolve`, scope: "application", action: "conversation.resolve" },
 	{ method: "POST", path: `${a}/conversations/${conversationId}/reopen`, scope: "application", action: "conversation.resolve" },
 	{ method: "POST", path: `${a}/conversations/${conversationId}/close`, scope: "application", action: "conversation.resolve" },
+	{ method: "GET", path: `${a}/knowledge/articles`, scope: "application", action: "knowledge.read" },
+	{ method: "GET", path: `${a}/knowledge/articles/${articleId}`, scope: "application", action: "knowledge.read" },
+	{ method: "POST", path: `${a}/knowledge/articles`, scope: "application", action: "knowledge.manage" },
+	{ method: "PATCH", path: `${a}/knowledge/articles/${articleId}`, scope: "application", action: "knowledge.manage" },
+	{ method: "POST", path: `${a}/knowledge/articles/${articleId}/publish`, scope: "application", action: "knowledge.manage" },
+	{ method: "POST", path: `${a}/knowledge/articles/${articleId}/unpublish`, scope: "application", action: "knowledge.manage" },
+	{ method: "DELETE", path: `${a}/knowledge/articles/${articleId}`, scope: "application", action: "knowledge.manage" },
+	{ method: "GET", path: `${a}/ai/settings`, scope: "application", action: "application.read" },
+	{ method: "PUT", path: `${a}/ai/settings`, scope: "application", action: "application.update" },
 ];
 
 function send(baseUrl: string, method: string, path: string, headers: Record<string, string> = {}, body: unknown = {}) {
@@ -259,6 +275,8 @@ test("service conversation and customer endpoints need an api key with the right
 			{ method: "GET", path: `/service/conversations/${conversationId}/messages` },
 			{ method: "POST", path: `/service/conversations/${conversationId}/messages`, body: { body: "hi" } },
 			{ method: "POST", path: `/service/conversations/${conversationId}/escalate`, body: {} },
+			{ method: "POST", path: `/service/conversations/${conversationId}/ai-reply`, body: {} },
+			{ method: "GET", path: "/service/knowledge/search?q=refund" },
 		];
 		for (const call of calls) {
 			const anonymous = await fetch(`${baseUrl}${call.path}`, {

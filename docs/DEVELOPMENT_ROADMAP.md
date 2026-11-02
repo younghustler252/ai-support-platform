@@ -49,9 +49,9 @@ Status legend: [x] implemented and confirmed; [ ] pending; [~] implemented but a
 - [~] Human support API and isolation tests (route policy and use case tests written; flow integration test pending)
 
 ## Milestone 7 — Knowledge and AI
-- [ ] Knowledge management and retrieval
-- [ ] AI provider abstraction and application configuration
-- [ ] AI response generation, escalation, usage and safety checks
+- [~] Knowledge management and retrieval (implemented with Postgres full-text search; not yet run against a database)
+- [~] AI provider abstraction and application configuration (OpenAI-compatible adapter, per-application settings)
+- [~] AI response generation, escalation, usage and safety checks (synchronous endpoint; automatic triggering moves to BullMQ in Milestone 8)
 
 ## Milestone 8 — Redis, Jobs and Real-Time
 - [ ] Redis integration, BullMQ and worker

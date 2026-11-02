@@ -33,3 +33,7 @@ Support permissions added in Milestone 6: `customer.read`, `customer.manage`, `c
 - Default roles cannot be edited, deleted or assigned. Changing a member's built-in tier stays a separate action (`member.manage`).
 - Deleting a role removes its assignments in the same transaction.
 - Every create, update, delete, assign and unassign is audited.
+
+## Knowledge permissions (Milestone 7)
+
+`knowledge.read` (MEMBER) and `knowledge.manage` (ADMIN) are application permissions and can be granted to custom roles. AI settings reuse `application.read` and `application.update`.

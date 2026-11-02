@@ -31,3 +31,10 @@ Migration: `20261101090000_dynamic_rbac`. The catalog sync runs when the server 
 - `Message` has `senderUserId` and an `internal` flag for private agent notes; messages are paged by `(createdAt, id)`.
 - `ConversationAssignment` keeps assignment history with `assignedByUserId` and an `endReason` (REASSIGNED, TRANSFERRED, RELEASED, RESOLVED, CLOSED).
 - Every state change locks the conversation row (`SELECT ... FOR UPDATE`) so concurrent claims cannot both succeed.
+
+## Knowledge (Milestone 7)
+
+- `KnowledgeArticle` is a draft until `publishedAt` is set; `updatedAt` orders the article list.
+- `KnowledgeChunk` holds roughly 900 character chunks, each prefixed with the article title, and a generated `tsvector` column (`simple` dictionary, language neutral) with a GIN index. Chunks are rebuilt whenever title or content change and deleted with the article.
+- Only chunks of published articles in the caller's application are searched. Embeddings can be added later as a nullable column without changing the API.
+- AI settings live in `ApplicationSetting.config.ai`; AI usage is recorded as `UsageEvent` rows with metric `ai.request`.

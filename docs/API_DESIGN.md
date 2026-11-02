@@ -66,3 +66,26 @@ Service endpoints use an API key and never expose internal notes, system events 
 | POST | `/service/conversations/:conversationId/messages`, `/escalate` | `chat` |
 
 Lists use keyset pagination: pass the returned `nextCursor` as `cursor`. State changes that conflict with the conversation's current state return 409.
+
+## Knowledge and AI (Milestone 7)
+
+Agent endpoints under `/organizations/:organizationId/applications/:applicationId`:
+
+| Method | Path | Permission |
+| --- | --- | --- |
+| GET | `/knowledge/articles` (`status`, `q`, `limit`, `cursor`) | `knowledge.read` |
+| GET | `/knowledge/articles/:articleId` | `knowledge.read` |
+| POST | `/knowledge/articles` | `knowledge.manage` |
+| PATCH, DELETE | `/knowledge/articles/:articleId` | `knowledge.manage` |
+| POST | `/knowledge/articles/:articleId/publish`, `/unpublish` | `knowledge.manage` |
+| GET | `/ai/settings` | `application.read` |
+| PUT | `/ai/settings` (`enabled`, `instructions`, `fallbackMessage`) | `application.update` |
+
+Service endpoints (API key):
+
+| Method | Path | Key scope |
+| --- | --- | --- |
+| GET | `/service/knowledge/search?q=` | `knowledge:read` |
+| POST | `/service/conversations/:conversationId/ai-reply` | `chat` |
+
+`ai-reply` answers the latest customer message from published articles and returns `outcome` (`replied`, `escalated` with a `reason`, or `skipped`). Service message payloads expose only `id`, `sender`, `body` and `createdAt`.
