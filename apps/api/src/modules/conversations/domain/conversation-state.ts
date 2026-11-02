@@ -132,10 +132,11 @@ export function decide(state: ConversationState, command: ConversationCommand): 
 	}
 }
 
-export type PostKind = "customer" | "agent-reply" | "agent-note";
+export type PostKind = "customer" | "agent-reply" | "agent-note" | "ai";
 
 export function canPost(state: ConversationState, kind: PostKind): { ok: true } | { ok: false; reason: string } {
 	if (state.status === "CLOSED") return { ok: false, reason: "The conversation is closed" };
+	if (kind === "ai" && state.status !== "AI_ACTIVE") return { ok: false, reason: "The conversation is no longer handled by AI" };
 	if (kind === "agent-reply") {
 		if (state.status === "RESOLVED") return { ok: false, reason: "Reopen the conversation before replying" };
 		if (state.status !== "ASSIGNED_TO_AGENT") return { ok: false, reason: "Claim the conversation before replying" };

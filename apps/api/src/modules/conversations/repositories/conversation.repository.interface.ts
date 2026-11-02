@@ -24,6 +24,7 @@ export interface IConversationRepository {
 		conversationId: string,
 		query: { includeInternal: boolean; limit: number; cursor?: string },
 	): Promise<MessagePage | null>;
+	recentMessages(applicationId: string, conversationId: string, limit: number): Promise<MessageView[] | null>;
 	appendMessage(applicationId: string, conversationId: string, input: AppendInput): Promise<AppendResult>;
 	apply(
 		applicationId: string,

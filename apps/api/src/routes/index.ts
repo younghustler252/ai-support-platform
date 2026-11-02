@@ -1,6 +1,7 @@
 import { Router } from "express";
 import type { AwilixContainer } from "awilix";
 
+import { aiRouter } from "../modules/ai/routes/ai.routes.js";
 import { apiKeyRouter } from "../modules/api-keys/routes/api-key.routes.js";
 import { applicationRouter } from "../modules/applications/routes/application.routes.js";
 import { authRouter } from "../modules/auth/routes/auth.routes.js";
@@ -25,6 +26,7 @@ export function apiRouter(container: AwilixContainer): Router {
 	router.use(customerRouter());
 	router.use(conversationRouter());
 	router.use(knowledgeRouter());
+	router.use(aiRouter());
 	
 	
 

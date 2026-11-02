@@ -4,6 +4,7 @@ import { MemoryRateLimiter } from "../foundation/rate-limit/rate-limiter.js";
 import { prisma } from "../infrastructure/database/prisma.js";
 import { createEmailTransport } from "../infrastructure/email/email-transport.js";
 import { InProcessEmailQueue } from "../infrastructure/email/in-process-email-queue.js";
+import { registerAi } from "../modules/ai/ai.container.js";
 import { registerApiKeys } from "../modules/api-keys/api-keys.container.js";
 import { registerApplications } from "../modules/applications/applications.container.js";
 import { registerConversations } from "../modules/conversations/conversations.container.js";
@@ -43,5 +44,6 @@ registerRbac(container);
 registerCustomers(container);
 registerConversations(container);
 registerKnowledge(container);
+registerAi(container);
 
 

@@ -5,6 +5,7 @@ import { validatedBody, validatedParams } from "../../auth/http/auth-http.js";
 import { apiKeyContext } from "../../api-keys/middleware/require-api-key.js";
 import type { EscalateConversationUseCase } from "../usecases/escalate-conversation.usecase.js";
 import { toPublicConversation, type GetServiceConversationUseCase } from "../usecases/get-service-conversation.usecase.js";
+import { toPublicMessage } from "../usecases/public-message.js";
 import type { ListServiceMessagesUseCase } from "../usecases/list-service-messages.usecase.js";
 import type { SendCustomerMessageUseCase } from "../usecases/send-customer-message.usecase.js";
 import type { StartConversationUseCase } from "../usecases/start-conversation.usecase.js";
@@ -32,7 +33,7 @@ export class ServiceConversationController {
 			subject: input.subject,
 			message: input.message,
 		});
-		response.status(201).json({ data: { conversation: toPublicConversation(conversation), message } });
+		response.status(201).json({ data: { conversation: toPublicConversation(conversation), message: toPublicMessage(message) } });
 	};
 
 	get = async (_request: Request, response: Response): Promise<void> => {
@@ -51,7 +52,7 @@ export class ServiceConversationController {
 			limit,
 			cursor,
 		});
-		response.json({ data: { messages: page.items }, meta: { nextCursor: page.nextCursor } });
+		response.json({ data: { messages: page.items.map(toPublicMessage) }, meta: { nextCursor: page.nextCursor } });
 	};
 
 	sendMessage = async (_request: Request, response: Response): Promise<void> => {
@@ -61,7 +62,7 @@ export class ServiceConversationController {
 			conversationId: conversationIdOf(response),
 			body,
 		});
-		response.status(201).json({ data: result });
+		response.status(201).json({ data: { message: toPublicMessage(result.message), reopened: result.reopened } });
 	};
 
 	escalate = async (_request: Request, response: Response): Promise<void> => {

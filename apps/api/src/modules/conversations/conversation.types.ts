@@ -61,9 +61,10 @@ export interface TransitionContext {
 }
 
 export interface AppendInput {
-	kind: "customer" | "agent-reply" | "agent-note";
+	kind: "customer" | "agent-reply" | "agent-note" | "ai";
 	senderUserId?: string;
 	body: string;
+	metadata?: Record<string, string | number | boolean | null>;
 	requireAssignee?: string;
 }
 

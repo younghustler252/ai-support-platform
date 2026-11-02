@@ -66,7 +66,13 @@ interface MessageRow {
 
 interface LockedConversation {
 	state: ConversationState;
-	createMessage(data: { sender: MessageView["sender"]; senderUserId: string | null; body: string; internal: boolean }): Promise<MessageRow>;
+	createMessage(data: {
+		sender: MessageView["sender"];
+		senderUserId: string | null;
+		body: string;
+		internal: boolean;
+		metadata?: NonNullable<MessageView["metadata"]>;
+	}): Promise<MessageRow>;
 	touchLastMessage(at: Date): Promise<void>;
 	persist(before: ConversationState, outcome: TransitionOutcome, context: TransitionContext): Promise<void>;
 }
@@ -183,10 +189,11 @@ export class ConversationRepositoryImpl implements IConversationRepository {
 
 			const internal = input.kind === "agent-note";
 			const message = await locked.createMessage({
-				sender: input.kind === "customer" ? "CUSTOMER" : "AGENT",
+				sender: input.kind === "customer" ? "CUSTOMER" : input.kind === "ai" ? "AI" : "AGENT",
 				senderUserId: input.senderUserId ?? null,
 				body: input.body,
 				internal,
+				...(input.metadata ? { metadata: input.metadata } : {}),
 			});
 			if (!internal) await locked.touchLastMessage(message.createdAt);
 			return { result: "ok", message: toMessage(message), reopened };
@@ -213,6 +220,18 @@ export class ConversationRepositoryImpl implements IConversationRepository {
 		const conversation = await this.find(applicationId, conversationId);
 		if (!conversation) return { result: "not-found" };
 		return { result: "ok", conversation, changed: outcome.changed, event: outcome.event };
+	}
+
+	async recentMessages(applicationId: string, conversationId: string, limit: number): Promise<MessageView[] | null> {
+		const exists = await this.deps.prisma.conversation.findFirst({ where: { id: conversationId, applicationId }, select: { id: true } });
+		if (!exists) return null;
+		const rows = await this.deps.prisma.message.findMany({
+			where: { conversationId, internal: false },
+			select: messageSelect,
+			orderBy: [{ createdAt: "desc" }, { id: "desc" }],
+			take: limit,
+		});
+		return rows.reverse().map(toMessage);
 	}
 
 	private locked<R>(
