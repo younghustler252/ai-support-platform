@@ -196,7 +196,7 @@ export class ConversationRepositoryImpl implements IConversationRepository {
 				...(input.metadata ? { metadata: input.metadata } : {}),
 			});
 			if (!internal) await locked.touchLastMessage(message.createdAt);
-			return { result: "ok", message: toMessage(message), reopened };
+			return { result: "ok", message: toMessage(message), reopened, state: { status: current.status, assigneeUserId: current.assigneeUserId } };
 		});
 	}
 

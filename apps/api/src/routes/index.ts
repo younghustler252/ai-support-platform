@@ -10,6 +10,7 @@ import { membershipRouter } from "../modules/memberships/routes/membership.route
 import { conversationRouter } from "../modules/conversations/routes/conversation.routes.js";
 import { customerRouter } from "../modules/customers/routes/customer.routes.js";
 import { organizationRouter } from "../modules/organizations/routes/organization.routes.js";
+import { realtimeRouter } from "../modules/realtime/routes/realtime.routes.js";
 import { roleRouter } from "../modules/rbac/routes/role.routes.js";
 import { publicSettingsRouter } from "../modules/platform-settings/routes/public-settings.routes.js";
 
@@ -27,6 +28,7 @@ export function apiRouter(container: AwilixContainer): Router {
 	router.use(conversationRouter());
 	router.use(knowledgeRouter());
 	router.use(aiRouter());
+	router.use(realtimeRouter());
 	
 	
 

@@ -1,6 +1,6 @@
 import { asFunction, asValue, createContainer, InjectionMode } from "awilix";
 
-import { MemoryRateLimiter } from "../foundation/rate-limit/rate-limiter.js";
+import { createRateLimiter } from "../infrastructure/redis/redis-rate-limiter.js";
 import { prisma } from "../infrastructure/database/prisma.js";
 import { createEmailTransport } from "../infrastructure/email/email-transport.js";
 import { createAiReplyScheduler, createEmailQueue } from "../infrastructure/queue/queue-factories.js";
@@ -14,6 +14,7 @@ import { registerAuth } from "../modules/auth/auth.container.js";
 import { registerKnowledge } from "../modules/knowledge/knowledge.container.js";
 import { registerMemberships } from "../modules/memberships/memberships.container.js";
 import { registerOrganizations } from "../modules/organizations/organizations.container.js";
+import { registerRealtime } from "../modules/realtime/realtime.container.js";
 import { registerRbac } from "../modules/rbac/rbac.container.js";
 import { registerPlatformSettings } from "../modules/platform-settings/platform-settings.container.js";
 import { registerTenancy } from "../modules/tenancy/tenancy.container.js";
@@ -27,7 +28,7 @@ export const container = createContainer({
 // Never create a new Prisma Client for each HTTP request.
 container.register({
 	prisma: asValue(prisma),
-	rateLimiter: asValue(new MemoryRateLimiter()),
+	rateLimiter: asFunction(createRateLimiter).singleton(),
 	emailTransport: asFunction(createEmailTransport).singleton(),
 	emailQueue: asFunction(createEmailQueue).singleton(),
 	aiReplyScheduler: asFunction(createAiReplyScheduler).singleton(),
@@ -43,6 +44,7 @@ registerApplications(container);
 registerApiKeys(container);
 registerRbac(container);
 registerCustomers(container);
+registerRealtime(container);
 registerConversations(container);
 registerKnowledge(container);
 registerAi(container);

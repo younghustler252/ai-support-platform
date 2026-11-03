@@ -10,6 +10,7 @@ import { MemoryRateLimiter } from "../src/foundation/rate-limit/rate-limiter.js"
 import { apiKeyRouter } from "../src/modules/api-keys/routes/api-key.routes.js";
 import { applicationRouter } from "../src/modules/applications/routes/application.routes.js";
 import { membershipRouter } from "../src/modules/memberships/routes/membership.routes.js";
+import { realtimeRouter } from "../src/modules/realtime/routes/realtime.routes.js";
 import { aiRouter } from "../src/modules/ai/routes/ai.routes.js";
 import { knowledgeRouter } from "../src/modules/knowledge/routes/knowledge.routes.js";
 import { conversationRouter } from "../src/modules/conversations/routes/conversation.routes.js";
@@ -88,6 +89,7 @@ function buildApp(options: { deny?: Error; authenticated?: boolean } = {}) {
 		serviceConversationController: asValue(controller),
 		knowledgeController: asValue(controller),
 		aiController: asValue(controller),
+		realtimeController: asValue(controller),
 		getCurrentUserUseCase: asValue({
 			execute: async () => {
 				if (options.authenticated === false) throw new AuthenticationError("Authentication required");
@@ -114,6 +116,7 @@ function buildApp(options: { deny?: Error; authenticated?: boolean } = {}) {
 	server.use(conversationRouter());
 	server.use(knowledgeRouter());
 	server.use(aiRouter());
+	server.use(realtimeRouter());
 	server.use(errorHandler);
 	return { server, calls, hits: () => controllerHits };
 }
@@ -180,6 +183,7 @@ const routes: Array<{ method: string; path: string; scope: Call["scope"]; action
 	{ method: "POST", path: `${a}/knowledge/articles/${articleId}/publish`, scope: "application", action: "knowledge.manage" },
 	{ method: "POST", path: `${a}/knowledge/articles/${articleId}/unpublish`, scope: "application", action: "knowledge.manage" },
 	{ method: "DELETE", path: `${a}/knowledge/articles/${articleId}`, scope: "application", action: "knowledge.manage" },
+	{ method: "GET", path: `${a}/events`, scope: "application", action: "conversation.read" },
 	{ method: "GET", path: `${a}/ai/settings`, scope: "application", action: "application.read" },
 	{ method: "PUT", path: `${a}/ai/settings`, scope: "application", action: "application.update" },
 ];
@@ -277,6 +281,7 @@ test("service conversation and customer endpoints need an api key with the right
 			{ method: "POST", path: `/service/conversations/${conversationId}/escalate`, body: {} },
 			{ method: "POST", path: `/service/conversations/${conversationId}/ai-reply`, body: {} },
 			{ method: "GET", path: "/service/knowledge/search?q=refund" },
+			{ method: "GET", path: `/service/conversations/${conversationId}/events` },
 		];
 		for (const call of calls) {
 			const anonymous = await fetch(`${baseUrl}${call.path}`, {

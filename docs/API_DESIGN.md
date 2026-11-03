@@ -89,3 +89,14 @@ Service endpoints (API key):
 | POST | `/service/conversations/:conversationId/ai-reply` | `chat` |
 
 `ai-reply` answers the latest customer message from published articles and returns `outcome` (`replied`, `escalated` with a `reason`, or `skipped`). Service message payloads expose only `id`, `sender`, `body` and `createdAt`.
+
+## Real-time events (Milestone 8)
+
+Server-Sent Events, no extra client library needed (`EventSource` or `fetch` streaming).
+
+| Path | Auth | Events |
+| --- | --- | --- |
+| `GET /organizations/:organizationId/applications/:applicationId/events` | session, `conversation.read` | `conversation.updated`, `message.created` with ids, status, sender and assignee |
+| `GET /service/conversations/:conversationId/events` | API key scope `chat` | `conversation.updated` (status), `message.created` (ids only) |
+
+Events carry no message text; fetch the data through the normal endpoints. Internal notes and system events are never sent to customers. Assigned-only agents only receive events for conversations assigned to them. Events are not replayed, so clients refetch after reconnecting. Each user may hold 10 agent streams and each API key 100 customer streams per API instance.

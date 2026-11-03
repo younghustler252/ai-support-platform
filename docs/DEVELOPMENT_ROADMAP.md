@@ -56,7 +56,7 @@ Status legend: [x] implemented and confirmed; [ ] pending; [~] implemented but a
 ## Milestone 8 — Redis, Jobs and Real-Time
 - [~] Redis integration, BullMQ and worker (email and AI reply queues, worker process; unrun)
 - [~] Reliable retries and asynchronous processing (exponential backoff, dedupe by message id)
-- [ ] Real-time messages, presence and rate limiting
+- [~] Real-time messages and Redis rate limiting (SSE with Redis pub/sub; presence not started)
 
 ## Milestone 9 — Platform Services
 - [ ] Notifications, email and webhooks

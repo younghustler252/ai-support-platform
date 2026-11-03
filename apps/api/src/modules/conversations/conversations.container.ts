@@ -2,6 +2,7 @@ import { asClass, type AwilixContainer } from "awilix";
 
 import { ConversationController } from "./controllers/conversation.controller.js";
 import { ServiceConversationController } from "./controllers/service-conversation.controller.js";
+import { EventPublishingConversationRepository } from "./repositories/event-publishing-conversation.repository.js";
 import { ConversationRepositoryImpl } from "./repositories/conversation.repository.impl.js";
 import { AssignConversationUseCase } from "./usecases/assign-conversation.usecase.js";
 import { ClaimConversationUseCase } from "./usecases/claim-conversation.usecase.js";
@@ -22,7 +23,8 @@ import { TransferConversationUseCase } from "./usecases/transfer-conversation.us
 
 export function registerConversations(container: AwilixContainer): void {
 	container.register({
-		conversationRepository: asClass(ConversationRepositoryImpl).scoped(),
+		conversationRepositoryImpl: asClass(ConversationRepositoryImpl).scoped(),
+		conversationRepository: asClass(EventPublishingConversationRepository).scoped(),
 		listConversationsUseCase: asClass(ListConversationsUseCase).scoped(),
 		getConversationUseCase: asClass(GetConversationUseCase).scoped(),
 		listMessagesUseCase: asClass(ListMessagesUseCase).scoped(),

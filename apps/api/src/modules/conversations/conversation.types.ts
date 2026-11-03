@@ -49,7 +49,7 @@ export type TransitionResult =
 	| { result: "invalid"; reason: string };
 
 export type AppendResult =
-	| { result: "ok"; message: MessageView; reopened: boolean }
+	| { result: "ok"; message: MessageView; reopened: boolean; state?: { status: ConversationStatus; assigneeUserId: string | null } }
 	| { result: "not-found" }
 	| { result: "not-assignee" }
 	| { result: "invalid"; reason: string };
