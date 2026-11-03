@@ -1,6 +1,7 @@
 import { tenancyConfig } from "../../../config/tenancy.js";
 import { ConflictError, NotFoundError } from "../../../foundation/errors/app-error.js";
 import { logger } from "../../../foundation/logging/logger.js";
+import type { IEntitlementService } from "../../entitlements/services/entitlement.service.js";
 import type { MessageView } from "../../conversations/conversation.types.js";
 import type { IConversationRepository } from "../../conversations/repositories/conversation.repository.interface.js";
 import type { IRetrievalService } from "../../retrieval/retrieval.service.js";
@@ -22,13 +23,14 @@ interface Dependencies {
 	aiProvider: IAiProvider;
 	aiSettingsRepository: IAiSettingsRepository;
 	aiUsageRepository: IAiUsageRepository;
+	entitlementService: IEntitlementService;
 }
 
 export class GenerateAiReplyUseCase {
 	constructor(private readonly deps: Dependencies) {}
 
 	async execute(input: { applicationId: string; conversationId: string }): Promise<AiReplyResult> {
-		const { conversationRepository, retrievalService, aiProvider, aiSettingsRepository, aiUsageRepository } = this.deps;
+		const { conversationRepository, retrievalService, aiProvider, aiSettingsRepository, aiUsageRepository, entitlementService } = this.deps;
 		const { applicationId, conversationId } = input;
 
 		const conversation = await conversationRepository.find(applicationId, conversationId);
@@ -42,6 +44,8 @@ export class GenerateAiReplyUseCase {
 
 		const settings = await aiSettingsRepository.get(applicationId);
 		if (!settings.enabled || !aiProvider.configured) return this.handoff(input, settings.fallbackMessage, "disabled");
+
+		if (!(await entitlementService.canUseAi(applicationId))) return this.handoff(input, settings.fallbackMessage, "limit");
 
 		const used = await aiUsageRepository.countSince(applicationId, REQUEST_METRIC, new Date(Date.now() - DAY));
 		if (used >= tenancyConfig.limits.aiRepliesPerApplicationPerDay) return this.handoff(input, settings.fallbackMessage, "limit");

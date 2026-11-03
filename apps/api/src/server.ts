@@ -6,6 +6,7 @@ import type { RealtimeBus } from "./infrastructure/realtime/realtime-bus.js";
 import type { AiReplyScheduler } from "./modules/ai/ai-reply-scheduler.js";
 import type { EmailQueue } from "./infrastructure/email/in-process-email-queue.js";
 import { prisma } from "./infrastructure/database/prisma.js";
+import { syncPlanCatalog } from "./modules/entitlements/services/plan-catalog-sync.js";
 import { syncRbacCatalog } from "./modules/rbac/services/catalog-sync.js";
 import { startAuthMaintenance } from "./modules/auth/auth.maintenance.js";
 
@@ -13,6 +14,7 @@ const SHUTDOWN_TIMEOUT_MS = 15_000;
 const EMAIL_DRAIN_TIMEOUT_MS = 5_000;
 
 await syncRbacCatalog(prisma);
+await syncPlanCatalog(prisma);
 
 const server = createApp().listen(env.PORT, () => {
 	logger.info("server.started", { port: env.PORT });

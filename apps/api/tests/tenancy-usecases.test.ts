@@ -3,6 +3,7 @@ import { test } from "node:test";
 
 import { tenancyConfig } from "../src/config/tenancy.js";
 import { ConflictError, ForbiddenError, LimitExceededError, NotFoundError, ValidationError } from "../src/foundation/errors/app-error.js";
+import type { IEntitlementService } from "../src/modules/entitlements/services/entitlement.service.js";
 import { CreateApplicationUseCase } from "../src/modules/applications/usecases/create-application.usecase.js";
 import { ListApplicationsUseCase } from "../src/modules/applications/usecases/list-applications.usecase.js";
 import type { IApplicationRepository } from "../src/modules/applications/repositories/application.repository.interface.js";
@@ -109,10 +110,20 @@ function applicationRepository(overrides: Partial<IApplicationRepository> = {}):
 	};
 }
 
+const gate: IEntitlementService = {
+	planFor: async () => { throw new Error("unused"); },
+	canUseAi: async () => true,
+	overview: async () => { throw new Error("unused"); },
+	assertWithin: async (_organizationId, _feature, current, hardCap = Number.POSITIVE_INFINITY) => {
+		if (current >= hardCap) throw new LimitExceededError();
+	},
+};
+
 test("application creation enforces the organization limit and slug uniqueness", async () => {
 	const full = new CreateApplicationUseCase({
 		applicationRepository: applicationRepository({ countActive: async () => tenancyConfig.limits.applicationsPerOrganization }),
 		auditService: auditSpy(),
+		entitlementService: gate,
 	});
 	await assert.rejects(
 		full.execute({ organizationId: "org-1", actorId: "user-1", name: "Site", allowedOrigins: [] }),
@@ -122,6 +133,7 @@ test("application creation enforces the organization limit and slug uniqueness",
 	const duplicate = new CreateApplicationUseCase({
 		applicationRepository: applicationRepository({ create: async () => { throw uniqueViolation(); } }),
 		auditService: auditSpy(),
+		entitlementService: gate,
 	});
 	await assert.rejects(
 		duplicate.execute({ organizationId: "org-1", actorId: "user-1", name: "Site", slug: "site", allowedOrigins: [] }),

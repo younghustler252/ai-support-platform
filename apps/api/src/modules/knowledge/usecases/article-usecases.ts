@@ -1,8 +1,9 @@
-import { ConflictError, LimitExceededError, NotFoundError } from "../../../foundation/errors/app-error.js";
+import { ConflictError, NotFoundError } from "../../../foundation/errors/app-error.js";
 import type { Page } from "../../../foundation/utils/cursor.js";
 import { tenancyConfig } from "../../../config/tenancy.js";
 import type { AuditRecorder } from "../../audit/services/audit.service.js";
 import type { RequestMeta } from "../../auth/auth.types.js";
+import type { IEntitlementService } from "../../entitlements/services/entitlement.service.js";
 import { auditMetadata } from "../../tenancy/tenancy.audit.js";
 import type { IRetrievalService } from "../../retrieval/retrieval.service.js";
 import { chunkArticle } from "../domain/chunking.js";
@@ -49,13 +50,20 @@ export class GetArticleUseCase {
 }
 
 export class CreateArticleUseCase {
-	constructor(private readonly deps: { knowledgeRepository: IKnowledgeRepository; auditService: AuditRecorder }) {}
+	constructor(private readonly deps: {
+		knowledgeRepository: IKnowledgeRepository;
+		auditService: AuditRecorder;
+		entitlementService: IEntitlementService;
+	}) {}
 
 	async execute(input: Scope & { title: string; content: string; links?: ArticleLink[] }, meta: RequestMeta = {}): Promise<ArticleView> {
-		const { knowledgeRepository, auditService } = this.deps;
-		if ((await knowledgeRepository.count(input.applicationId)) >= tenancyConfig.limits.articlesPerApplication) {
-			throw new LimitExceededError("This application has reached its knowledge article limit");
-		}
+		const { knowledgeRepository, auditService, entitlementService } = this.deps;
+		await entitlementService.assertWithin(
+			input.organizationId,
+			"knowledge_articles",
+			await knowledgeRepository.count(input.applicationId),
+			tenancyConfig.limits.articlesPerApplication,
+		);
 		const article = await knowledgeRepository.create(
 			input.applicationId,
 			{ title: input.title, content: input.content, links: input.links ?? null },

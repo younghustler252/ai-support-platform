@@ -1,3 +1,3 @@
 # usage
 
-Status: PLANNED — module boundary reserved. Not implemented, registered, or mounted. Follow route → controller → use case → repository, and add tests, tenant enforcement, permissions and docs when implementing.
+Usage is recorded as `UsageEvent` rows (`ai.request` today) and summarised by `GET /organizations/:id/plan`.

@@ -18,7 +18,17 @@ import type { IKnowledgeRepository } from "../src/modules/knowledge/repositories
 import { CreateArticleUseCase, SetArticlePublishedUseCase, UpdateArticleUseCase } from "../src/modules/knowledge/usecases/article-usecases.js";
 import { createArticleSchema, searchKnowledgeQuerySchema, updateArticleSchema } from "../src/modules/knowledge/validators/knowledge.validator.js";
 import { buildSearchQuery } from "../src/modules/retrieval/search-query.js";
+import type { IEntitlementService } from "../src/modules/entitlements/services/entitlement.service.js";
 import { auditSpy } from "./helpers.js";
+
+const gate: IEntitlementService = {
+	planFor: async () => { throw new Error("unused"); },
+	canUseAi: async () => true,
+	overview: async () => { throw new Error("unused"); },
+	assertWithin: async (_organizationId, _feature, current, hardCap = Number.POSITIVE_INFINITY) => {
+		if (current >= hardCap) throw new LimitExceededError();
+	},
+};
 
 const scope = { organizationId: "org-1", applicationId: "app-1", actorId: "user-1" };
 
@@ -93,13 +103,13 @@ function knowledgeRepository(overrides: Partial<IKnowledgeRepository> = {}): IKn
 test("creating an article chunks it, audits it and respects the per application limit", async () => {
 	const repo = knowledgeRepository();
 	const audit = auditSpy();
-	await new CreateArticleUseCase({ knowledgeRepository: repo, auditService: audit }).execute({ ...scope, title: "Refunds", content: "Five days." });
+	await new CreateArticleUseCase({ knowledgeRepository: repo, auditService: audit, entitlementService: gate }).execute({ ...scope, title: "Refunds", content: "Five days." });
 	assert.equal(repo.chunkCalls[0]?.length, 1);
 	assert.equal(audit.events[0]?.action, "knowledge.article.created");
 
 	const full = knowledgeRepository({ count: async () => tenancyConfig.limits.articlesPerApplication });
 	await assert.rejects(
-		new CreateArticleUseCase({ knowledgeRepository: full, auditService: audit }).execute({ ...scope, title: "X", content: "Y" }),
+		new CreateArticleUseCase({ knowledgeRepository: full, auditService: audit, entitlementService: gate }).execute({ ...scope, title: "X", content: "Y" }),
 		LimitExceededError,
 	);
 });
@@ -156,6 +166,7 @@ function harness(options: {
 	enabled?: boolean;
 	fallback?: string | null;
 	used?: number;
+	planAllows?: boolean;
 	appendResult?: "ok" | "invalid";
 } = {}): Harness {
 	const state: Harness = { useCase: undefined as never, appended: [], commands: [], usage: [], completions: 0 };
@@ -194,6 +205,7 @@ function harness(options: {
 		aiProvider: provider,
 		aiSettingsRepository: settings,
 		aiUsageRepository: usage,
+		entitlementService: { ...gate, canUseAi: async () => options.planAllows ?? true },
 	});
 	return state;
 }
@@ -224,6 +236,7 @@ test("no knowledge, disabled AI, a missing provider and the daily cap all hand o
 		[{ enabled: false }, "disabled"],
 		[{ provider: { configured: false } }, "disabled"],
 		[{ used: tenancyConfig.limits.aiRepliesPerApplicationPerDay }, "limit"],
+		[{ planAllows: false }, "limit"],
 	];
 	for (const [options, reason] of cases) {
 		const h = harness(options);

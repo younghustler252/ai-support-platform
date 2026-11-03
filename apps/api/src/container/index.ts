@@ -11,6 +11,7 @@ import { registerConversations } from "../modules/conversations/conversations.co
 import { registerCustomers } from "../modules/customers/customers.container.js";
 import { registerAudit } from "../modules/audit/audit.container.js";
 import { registerAuth } from "../modules/auth/auth.container.js";
+import { registerEntitlements } from "../modules/entitlements/entitlements.container.js";
 import { registerKnowledge } from "../modules/knowledge/knowledge.container.js";
 import { registerMemberships } from "../modules/memberships/memberships.container.js";
 import { registerOrganizations } from "../modules/organizations/organizations.container.js";
@@ -38,6 +39,7 @@ registerPlatformSettings(container);
 registerAudit(container);
 registerAuth(container);
 registerTenancy(container);
+registerEntitlements(container);
 registerOrganizations(container);
 registerMemberships(container);
 registerApplications(container);

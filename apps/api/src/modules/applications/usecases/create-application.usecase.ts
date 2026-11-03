@@ -1,9 +1,10 @@
 import { reservedSlugs, tenancyConfig } from "../../../config/tenancy.js";
-import { ConflictError, LimitExceededError } from "../../../foundation/errors/app-error.js";
+import { ConflictError } from "../../../foundation/errors/app-error.js";
 import { slugify, withRandomSuffix } from "../../../foundation/utils/slug.js";
 import type { AuditRecorder } from "../../audit/services/audit.service.js";
 import type { RequestMeta } from "../../auth/auth.types.js";
 import { isUniqueViolation } from "../../auth/auth.utils.js";
+import type { IEntitlementService } from "../../entitlements/services/entitlement.service.js";
 import { auditMetadata } from "../../tenancy/tenancy.audit.js";
 import type { ApplicationView, IApplicationRepository } from "../repositories/application.repository.interface.js";
 
@@ -19,14 +20,21 @@ interface Input {
 }
 
 export class CreateApplicationUseCase {
-	constructor(private readonly deps: { applicationRepository: IApplicationRepository; auditService: AuditRecorder }) {}
+	constructor(private readonly deps: {
+		applicationRepository: IApplicationRepository;
+		auditService: AuditRecorder;
+		entitlementService: IEntitlementService;
+	}) {}
 
 	async execute(input: Input, meta: RequestMeta = {}): Promise<ApplicationView> {
-		const { applicationRepository, auditService } = this.deps;
+		const { applicationRepository, auditService, entitlementService } = this.deps;
 
-		if ((await applicationRepository.countActive(input.organizationId)) >= tenancyConfig.limits.applicationsPerOrganization) {
-			throw new LimitExceededError("This organization has reached its application limit");
-		}
+		await entitlementService.assertWithin(
+			input.organizationId,
+			"applications",
+			await applicationRepository.countActive(input.organizationId),
+			tenancyConfig.limits.applicationsPerOrganization,
+		);
 
 		const generated = input.slug === undefined;
 		let candidate = input.slug ?? slugify(input.name, "application");
