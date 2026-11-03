@@ -144,7 +144,7 @@ function permissionsAtLeast(realm: PermissionRealm, tier: keyof typeof tierRank)
 			const minimum = (typeof rule === "string" ? rule : rule?.minimum) as keyof typeof tierRank;
 			return tierRank[tier] >= tierRank[minimum];
 		})
-		.map((definition) => ({ code: definition.code, scope: definition.requiredScope }));
+		.map((definition) => ({ code: definition.code, scope: (realm === "ORGANIZATION" ? "ORGANIZATION" : "APPLICATION") as PermissionScopeName }));
 }
 
 export const systemRoles: readonly SystemRoleDefinition[] = [
