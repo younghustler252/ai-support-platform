@@ -35,6 +35,6 @@ Migration: `20261101090000_dynamic_rbac`. The catalog sync runs when the server 
 ## Knowledge (Milestone 7)
 
 - `KnowledgeArticle` is a draft until `publishedAt` is set; `updatedAt` orders the article list.
-- `KnowledgeChunk` holds roughly 900 character chunks, each prefixed with the article title, and a generated `tsvector` column (`simple` dictionary, language neutral) with a GIN index. Chunks are rebuilt whenever title or content change and deleted with the article.
+- `KnowledgeChunk` holds roughly 900 character chunks, each prefixed with the article title, and a `tsvector` column (`simple` dictionary, language neutral) kept current by a database trigger, with a GIN index. A trigger is used instead of a generated column because Prisma cannot represent generated columns and would try to drop their default on every `migrate dev`. Chunks are rebuilt whenever title or content change and deleted with the article.
 - Only chunks of published articles in the caller's application are searched. Embeddings can be added later as a nullable column without changing the API.
 - AI settings live in `ApplicationSetting.config.ai`; AI usage is recorded as `UsageEvent` rows with metric `ai.request`.
