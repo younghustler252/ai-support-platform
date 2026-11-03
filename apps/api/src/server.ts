@@ -2,6 +2,7 @@ import { createApp } from "./app.js";
 import { env } from "./config/env.js";
 import { container } from "./container/index.js";
 import { logger } from "./foundation/logging/logger.js";
+import type { AiReplyScheduler } from "./modules/ai/ai-reply-scheduler.js";
 import type { EmailQueue } from "./infrastructure/email/in-process-email-queue.js";
 import { prisma } from "./infrastructure/database/prisma.js";
 import { syncRbacCatalog } from "./modules/rbac/services/catalog-sync.js";
@@ -37,6 +38,7 @@ async function shutdown(signal: string): Promise<void> {
 			server.closeIdleConnections();
 		});
 		await container.resolve<EmailQueue>("emailQueue").drain(EMAIL_DRAIN_TIMEOUT_MS);
+		await container.resolve<AiReplyScheduler>("aiReplyScheduler").close?.();
 		await prisma.$disconnect();
 		logger.info("server.shutdown_complete");
 		process.exit(0);

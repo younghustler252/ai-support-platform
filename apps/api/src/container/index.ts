@@ -1,9 +1,9 @@
-import { asClass, asFunction, asValue, createContainer, InjectionMode } from "awilix";
+import { asFunction, asValue, createContainer, InjectionMode } from "awilix";
 
 import { MemoryRateLimiter } from "../foundation/rate-limit/rate-limiter.js";
 import { prisma } from "../infrastructure/database/prisma.js";
 import { createEmailTransport } from "../infrastructure/email/email-transport.js";
-import { InProcessEmailQueue } from "../infrastructure/email/in-process-email-queue.js";
+import { createAiReplyScheduler, createEmailQueue } from "../infrastructure/queue/queue-factories.js";
 import { registerAi } from "../modules/ai/ai.container.js";
 import { registerApiKeys } from "../modules/api-keys/api-keys.container.js";
 import { registerApplications } from "../modules/applications/applications.container.js";
@@ -29,7 +29,8 @@ container.register({
 	prisma: asValue(prisma),
 	rateLimiter: asValue(new MemoryRateLimiter()),
 	emailTransport: asFunction(createEmailTransport).singleton(),
-	emailQueue: asClass(InProcessEmailQueue).singleton(),
+	emailQueue: asFunction(createEmailQueue).singleton(),
+	aiReplyScheduler: asFunction(createAiReplyScheduler).singleton(),
 });
 
 registerPlatformSettings(container);

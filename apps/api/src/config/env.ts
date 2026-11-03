@@ -30,6 +30,7 @@ const envSchema = z.object({
 	AUTH_MAX_ACTIVE_SESSIONS: positive(10),
 	AUTH_EMAIL_API_KEY: z.string().optional(),
 	AUTH_EMAIL_FROM: z.string().optional(),
+	REDIS_URL: z.string().regex(/^rediss?:\/\//, "REDIS_URL must start with redis:// or rediss://").optional(),
 	AI_API_KEY: z.string().min(1).optional(),
 	AI_BASE_URL: z.url().default("https://api.openai.com/v1"),
 	AI_MODEL: z.string().min(1).default("gpt-4o-mini"),
@@ -43,6 +44,9 @@ const envSchema = z.object({
 		});
 	}
 	if (value.NODE_ENV !== "production") return;
+	if (!value.REDIS_URL) {
+		context.addIssue({ code: "custom", path: ["REDIS_URL"], message: "REDIS_URL is required in production" });
+	}
 	for (const key of ["AUTH_EMAIL_API_KEY", "AUTH_EMAIL_FROM"] as const) {
 		if (!value[key]) {
 			context.addIssue({ code: "custom", path: [key], message: `${key} is required in production` });

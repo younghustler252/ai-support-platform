@@ -34,6 +34,7 @@ import { externalIdSchema, updateCustomerSchema } from "../src/modules/customers
 import type { EffectiveGrants } from "../src/modules/tenancy/tenancy.types.js";
 import type { Authorizer } from "../src/modules/tenancy/services/authorizer.service.js";
 import { applicationGrants } from "../src/modules/tenancy/services/effective-grants.js";
+import type { AiReplyJobData, AiReplyScheduler } from "../src/modules/ai/ai-reply-scheduler.js";
 import { auditSpy } from "./helpers.js";
 
 const agentGrants = applicationGrants({ organizationRole: "MEMBER", organizationCustom: [], applicationRole: "MEMBER", applicationCustom: [] });
@@ -75,6 +76,9 @@ function repository(overrides: Partial<IConversationRepository> = {}): IConversa
 		...overrides,
 	};
 }
+
+const scheduled: AiReplyJobData[] = [];
+const scheduler: AiReplyScheduler = { schedule: async (job) => { scheduled.push(job); } };
 
 const input = { organizationId: "org-1", applicationId: "app-1", conversationId: "conv-1", actor: agent };
 
@@ -224,28 +228,30 @@ test("starting a conversation upserts the customer and enforces the open convers
 	const customers = {
 		upsertByExternalId: async (_app: string, externalId: string) => { upserts.push(externalId); return { id: "cust-1", applicationId: "app-1", externalId, displayName: null, email: null, metadata: null, createdAt: new Date(), updatedAt: new Date() }; },
 	} as unknown as ICustomerRepository;
-	const started = await new StartConversationUseCase({ conversationRepository: repository(), customerRepository: customers }).execute({
+	const started = await new StartConversationUseCase({ conversationRepository: repository(), customerRepository: customers, aiReplyScheduler: scheduler }).execute({
 		applicationId: "app-1",
 		customer: { externalId: "user-42" },
 		message: "help",
 	});
 	assert.deepEqual(upserts, ["user-42"]);
 	assert.equal(started.conversation.status, "AI_ACTIVE");
+	assert.deepEqual(scheduled.map((job) => job.conversationId), ["conv-1"]);
 
 	const full = new StartConversationUseCase({
 		conversationRepository: repository({ countOpenForCustomer: async () => tenancyConfig.limits.openConversationsPerCustomer }),
 		customerRepository: customers,
+		aiReplyScheduler: scheduler,
 	});
 	await assert.rejects(full.execute({ applicationId: "app-1", customer: { externalId: "user-42" }, message: "again" }), LimitExceededError);
 });
 
 test("customer messages reopen resolved conversations and are refused once closed", async () => {
-	const ok = new SendCustomerMessageUseCase({ conversationRepository: repository({ appendMessage: async () => ({ result: "ok", message: message({ sender: "CUSTOMER" }), reopened: true }) }) });
+	const ok = new SendCustomerMessageUseCase({ conversationRepository: repository({ appendMessage: async () => ({ result: "ok", message: message({ sender: "CUSTOMER" }), reopened: true }) }), aiReplyScheduler: scheduler });
 	assert.equal((await ok.execute({ applicationId: "app-1", conversationId: "conv-1", body: "hello" })).reopened, true);
 
-	const closed = new SendCustomerMessageUseCase({ conversationRepository: repository({ appendMessage: async () => ({ result: "invalid", reason: "The conversation is closed" }) }) });
+	const closed = new SendCustomerMessageUseCase({ conversationRepository: repository({ appendMessage: async () => ({ result: "invalid", reason: "The conversation is closed" }) }), aiReplyScheduler: scheduler });
 	await assert.rejects(closed.execute({ applicationId: "app-1", conversationId: "conv-1", body: "hello" }), ConflictError);
-	const missing = new SendCustomerMessageUseCase({ conversationRepository: repository({ appendMessage: async () => ({ result: "not-found" }) }) });
+	const missing = new SendCustomerMessageUseCase({ conversationRepository: repository({ appendMessage: async () => ({ result: "not-found" }) }), aiReplyScheduler: scheduler });
 	await assert.rejects(missing.execute({ applicationId: "app-1", conversationId: "conv-1", body: "hello" }), NotFoundError);
 });
 
@@ -279,4 +285,27 @@ test("validators bound bodies, filters and customer identifiers", () => {
 	assert.equal(updateCustomerSchema.safeParse({ email: "Person@Example.com" }).success, true);
 	assert.equal(updateCustomerSchema.safeParse({ metadata: { plan: "pro", seats: 5, vip: true } }).success, true);
 	assert.equal(updateCustomerSchema.safeParse({ metadata: { nested: { a: 1 } } }).success, false);
+});
+
+test("customer messages schedule an AI reply unless they reopened the conversation, and scheduling failures never fail the request", async () => {
+	scheduled.length = 0;
+	const plain = new SendCustomerMessageUseCase({
+		conversationRepository: repository({ appendMessage: async () => ({ result: "ok", message: message({ id: "m-9", sender: "CUSTOMER" }), reopened: false }) }),
+		aiReplyScheduler: scheduler,
+	});
+	await plain.execute({ applicationId: "app-1", conversationId: "conv-1", body: "hi" });
+	assert.deepEqual(scheduled, [{ applicationId: "app-1", conversationId: "conv-1", messageId: "m-9" }]);
+
+	const reopening = new SendCustomerMessageUseCase({
+		conversationRepository: repository({ appendMessage: async () => ({ result: "ok", message: message({ sender: "CUSTOMER" }), reopened: true }) }),
+		aiReplyScheduler: scheduler,
+	});
+	await reopening.execute({ applicationId: "app-1", conversationId: "conv-1", body: "hi" });
+	assert.equal(scheduled.length, 1);
+
+	const broken = new SendCustomerMessageUseCase({
+		conversationRepository: repository({ appendMessage: async () => ({ result: "ok", message: message({ sender: "CUSTOMER" }), reopened: false }) }),
+		aiReplyScheduler: { schedule: async () => { throw new Error("redis down"); } },
+	});
+	assert.equal((await broken.execute({ applicationId: "app-1", conversationId: "conv-1", body: "hi" })).reopened, false);
 });
