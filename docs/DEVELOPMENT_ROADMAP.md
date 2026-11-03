@@ -54,8 +54,8 @@ Status legend: [x] implemented and confirmed; [ ] pending; [~] implemented but a
 - [~] AI response generation, escalation, usage and safety checks (synchronous endpoint; automatic triggering moves to BullMQ in Milestone 8)
 
 ## Milestone 8 — Redis, Jobs and Real-Time
-- [ ] Redis integration, BullMQ and worker
-- [ ] Reliable retries and asynchronous processing
+- [~] Redis integration, BullMQ and worker (email and AI reply queues, worker process; unrun)
+- [~] Reliable retries and asynchronous processing (exponential backoff, dedupe by message id)
 - [ ] Real-time messages, presence and rate limiting
 
 ## Milestone 9 — Platform Services
