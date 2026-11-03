@@ -100,3 +100,7 @@ Server-Sent Events, no extra client library needed (`EventSource` or `fetch` str
 | `GET /service/conversations/:conversationId/events` | API key scope `chat` | `conversation.updated` (status), `message.created` (ids only) |
 
 Events carry no message text; fetch the data through the normal endpoints. Internal notes and system events are never sent to customers. Assigned-only agents only receive events for conversations assigned to them. Events are not replayed, so clients refetch after reconnecting. Each user may hold 10 agent streams and each API key 100 customer streams per API instance.
+
+## Plans and limits (Milestone 9)
+
+`GET /organizations/:organizationId/plan` (`organization.read`) returns the plan and, for each feature, whether it is enabled, its limit and current usage where it is counted per organization. Features: `applications`, `knowledge_articles` (per application), `ai_assistant` and `ai_replies_monthly`. Exceeding a plan limit returns 403 `LIMIT_EXCEEDED` with a message naming the limit; when the monthly AI allowance is used up, conversations hand over to human agents instead of failing. Organizations without a plan use `free`. Plans cannot be changed through the API yet.
