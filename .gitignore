@@ -16,3 +16,6 @@ coverage/
 
 # Prisma generated client
 apps/api/src/generated/
+
+# Test run logs (generated locally)
+logs/tests/
