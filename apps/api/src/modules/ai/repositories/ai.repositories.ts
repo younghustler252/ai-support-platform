@@ -1,4 +1,5 @@
-import { Prisma, type PrismaClient } from "../../../generated/prisma/client.js";
+import type { PrismaClient } from "../../../generated/prisma/client.js";
+import type { IApplicationConfigStore } from "../../application-settings/application-config.store.js";
 import type { AiSettings } from "../ai.types.js";
 
 export const defaultAiSettings: AiSettings = { enabled: true, instructions: "", fallbackMessage: null };
@@ -23,26 +24,15 @@ function readSettings(config: unknown): AiSettings {
 }
 
 export class AiSettingsRepositoryImpl implements IAiSettingsRepository {
-	constructor(private readonly deps: { prisma: PrismaClient }) {}
+	constructor(private readonly deps: { applicationConfigStore: IApplicationConfigStore }) {}
 
 	async get(applicationId: string): Promise<AiSettings> {
-		const row = await this.deps.prisma.applicationSetting.findUnique({ where: { applicationId }, select: { config: true } });
-		return readSettings(row?.config);
+		const config = await this.deps.applicationConfigStore.read(applicationId);
+		return readSettings(config);
 	}
 
 	save(applicationId: string, patch: Partial<AiSettings>): Promise<AiSettings> {
-		return this.deps.prisma.$transaction(async (tx) => {
-			const row = await tx.applicationSetting.findUnique({ where: { applicationId }, select: { config: true } });
-			const existing = (row?.config as Record<string, unknown> | null) ?? {};
-			const merged = { ...readSettings(row?.config), ...patch };
-			const config = { ...existing, ai: merged } as unknown as Prisma.InputJsonValue;
-			await tx.applicationSetting.upsert({
-				where: { applicationId },
-				create: { applicationId, config },
-				update: { config, version: { increment: 1 } },
-			});
-			return merged;
-		});
+		return this.deps.applicationConfigStore.update(applicationId, "ai", (current) => ({ ...readSettings({ ai: current }), ...patch }));
 	}
 }
 

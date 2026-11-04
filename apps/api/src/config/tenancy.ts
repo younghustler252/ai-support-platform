@@ -51,6 +51,7 @@ export const tenancyConfig = {
 		searchTermLimit: 12,
 	},
 	notifications: { maxRecipients: 20, subjectMaxLength: 120 },
+	settings: { defaultTimezone: "UTC", titleMaxLength: 60, welcomeMessageMaxLength: 300 },
 	webhooks: {
 		timeoutMs: 8000,
 		attempts: 6,

@@ -13,6 +13,7 @@ import { customerRouter } from "../modules/customers/routes/customer.routes.js";
 import { organizationRouter } from "../modules/organizations/routes/organization.routes.js";
 import { realtimeRouter } from "../modules/realtime/routes/realtime.routes.js";
 import { auditRouter } from "../modules/audit/routes/audit.routes.js";
+import { settingsRouter } from "../modules/application-settings/routes/settings.routes.js";
 import { notificationRouter } from "../modules/notifications/routes/notification.routes.js";
 import { webhookRouter } from "../modules/webhooks/routes/webhook.routes.js";
 import { roleRouter } from "../modules/rbac/routes/role.routes.js";
@@ -37,6 +38,7 @@ export function apiRouter(container: AwilixContainer): Router {
 	router.use(webhookRouter());
 	router.use(auditRouter());
 	router.use(notificationRouter());
+	router.use(settingsRouter());
 
 	return router;
 }

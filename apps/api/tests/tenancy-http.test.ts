@@ -13,6 +13,7 @@ import { membershipRouter } from "../src/modules/memberships/routes/membership.r
 import { webhookRouter } from "../src/modules/webhooks/routes/webhook.routes.js";
 import { auditRouter } from "../src/modules/audit/routes/audit.routes.js";
 import { notificationRouter } from "../src/modules/notifications/routes/notification.routes.js";
+import { settingsRouter } from "../src/modules/application-settings/routes/settings.routes.js";
 import { planRouter } from "../src/modules/entitlements/routes/plan.routes.js";
 import { realtimeRouter } from "../src/modules/realtime/routes/realtime.routes.js";
 import { aiRouter } from "../src/modules/ai/routes/ai.routes.js";
@@ -97,6 +98,7 @@ function buildApp(options: { deny?: Error; authenticated?: boolean } = {}) {
 		webhookController: asValue(controller),
 		auditController: asValue(controller),
 		notificationController: asValue(controller),
+		settingsController: asValue(controller),
 		realtimeController: asValue(controller),
 		planController: asValue(controller),
 		getCurrentUserUseCase: asValue({
@@ -130,6 +132,7 @@ function buildApp(options: { deny?: Error; authenticated?: boolean } = {}) {
 	server.use(webhookRouter());
 	server.use(auditRouter());
 	server.use(notificationRouter());
+	server.use(settingsRouter());
 	server.use(errorHandler);
 	return { server, calls, hits: () => controllerHits };
 }
@@ -206,6 +209,8 @@ const routes: Array<{ method: string; path: string; scope: Call["scope"]; action
 	{ method: "GET", path: `${a}/webhooks/${endpointId}/deliveries`, scope: "application", action: "webhook.read" },
 	{ method: "POST", path: `${a}/webhooks/${endpointId}/deliveries/${articleId}/redeliver`, scope: "application", action: "webhook.manage" },
 	{ method: "GET", path: `${o}/audit-logs`, scope: "organization", action: "audit.read" },
+	{ method: "GET", path: `${a}/settings`, scope: "application", action: "application.read" },
+	{ method: "PATCH", path: `${a}/settings`, scope: "application", action: "application.update" },
 	{ method: "GET", path: `${o}/plan`, scope: "organization", action: "organization.read" },
 	{ method: "GET", path: `${a}/events`, scope: "application", action: "conversation.read" },
 	{ method: "GET", path: `${a}/ai/settings`, scope: "application", action: "application.read" },
@@ -346,6 +351,7 @@ test("service conversation and customer endpoints need an api key with the right
 			{ method: "POST", path: `/service/conversations/${conversationId}/messages`, body: { body: "hi" } },
 			{ method: "POST", path: `/service/conversations/${conversationId}/escalate`, body: {} },
 			{ method: "POST", path: `/service/conversations/${conversationId}/ai-reply`, body: {} },
+			{ method: "GET", path: "/service/widget-config" },
 			{ method: "GET", path: "/service/knowledge/search?q=refund" },
 			{ method: "GET", path: `/service/conversations/${conversationId}/events` },
 		];

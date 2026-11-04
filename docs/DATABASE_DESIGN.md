@@ -51,3 +51,7 @@ Migration: `20261101090000_dynamic_rbac`. The catalog sync runs when the server 
 ## Notifications (Milestone 9)
 
 `Notification` rows (`channel = IN_APP`) form each user's inbox with `readAt` for read state, indexed by `(recipientUserId, createdAt, id)` for paging. `NotificationPreference` holds one row per user who changed a setting; no row means email is on. It cascades with the user.
+
+## Application settings (Milestone 9)
+
+`ApplicationSetting.config` holds one section per feature: `ai`, `general` (timezone) and `widget`. Sections are updated under a row lock and each save increments `version`.

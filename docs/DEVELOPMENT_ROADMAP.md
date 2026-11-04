@@ -60,6 +60,7 @@ Status legend: [x] implemented and confirmed; [ ] pending; [~] implemented but a
 
 ## Milestone 9 — Platform Services
 - [x] Notifications (in-app inbox, email on assignment and escalation, preferences)
+- [x] Application settings (timezone, widget appearance, public widget config)
 - [~] Plans, entitlements and usage (catalog, limits enforced for applications, articles and AI; read-only plan endpoint)
 - [x] Outbound webhooks (signed, retried, SSRF-guarded, delivery log)
 - [x] Audit log API (tenant-scoped, filterable, keyset paged)

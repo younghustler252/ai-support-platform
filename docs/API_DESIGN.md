@@ -138,3 +138,15 @@ Signed-in user endpoints, always limited to the caller's own notifications:
 | GET, PUT | `/me/notification-preferences` | `{ email: boolean }`, default true; the in-app inbox is always on |
 
 Types: `conversation.assigned` (sent to the new assignee when someone else assigns or transfers) and `conversation.escalated` (sent to organization and application owners and admins). Payload: `{ conversationId, subject }`. Emails link to `/applications/:applicationId/conversations/:conversationId` on the web app.
+
+## Application settings (Milestone 9)
+
+| Method | Path | Permission |
+| --- | --- | --- |
+| GET | `/organizations/:organizationId/applications/:applicationId/settings` | `application.read` |
+| PATCH | same path | `application.update` |
+| GET | `/service/widget-config` | API key scope `chat` |
+
+Settings: `timezone` (IANA name, default `UTC`) and `widget` with `title` (null uses the application name, max 60), `welcomeMessage` (max 300, nullable), `primaryColor` (`#rrggbb`, default `#111827`) and `position` (`left` or `right`, default `right`). PATCH merges: send only the fields to change, and `null` clears a nullable field. AI settings stay under `/ai/settings`.
+
+`GET /service/widget-config` returns `{ widget: { title, welcomeMessage, primaryColor, position, aiEnabled } }` and is never cached.
