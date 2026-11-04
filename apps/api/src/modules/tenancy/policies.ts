@@ -22,6 +22,7 @@ export const organizationPolicy = {
 	"role.read": "ADMIN",
 	"role.manage": "ADMIN",
 	"role.assign": "ADMIN",
+	"audit.read": "ADMIN",
 } as const satisfies Record<string, TenantRole>;
 
 export type OrganizationAction = keyof typeof organizationPolicy;

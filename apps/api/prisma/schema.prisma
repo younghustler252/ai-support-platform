@@ -491,15 +491,19 @@ model PlanEntitlement {
 }
 
 model AuditLog {
-  id           String   @id @default(uuid())
-  actorUserId  String?
-  action       String
-  resourceType String
-  resourceId   String?
-  metadata     Json?
-  createdAt    DateTime @default(now())
-  actor        User?    @relation(fields: [actorUserId], references: [id])
+  id             String   @id @default(uuid())
+  actorUserId    String?
+  organizationId String?
+  applicationId  String?
+  action         String
+  resourceType   String
+  resourceId     String?
+  metadata       Json?
+  createdAt      DateTime @default(now())
+  actor          User?    @relation(fields: [actorUserId], references: [id])
 
+  @@index([organizationId, createdAt, id])
+  @@index([applicationId, createdAt])
   @@index([resourceType, resourceId, createdAt])
   @@index([actorUserId, createdAt])
   @@index([action, createdAt])

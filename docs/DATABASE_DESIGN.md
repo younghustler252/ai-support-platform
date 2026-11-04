@@ -43,3 +43,7 @@ Migration: `20261101090000_dynamic_rbac`. The catalog sync runs when the server 
 
 - `WebhookEndpoint` belongs to an application and stores `url`, subscribed `events`, `enabled`, `secretVersion`, `consecutiveFailures` and `disabledReason`. The secret itself is never stored: it is derived as HMAC of `endpointId:secretVersion` with `WEBHOOK_SIGNING_KEY`, and rotating bumps the version.
 - `WebhookDelivery` keeps the exact payload, status (PENDING, SUCCEEDED, FAILED), attempt count, last response status and a truncated error, so redelivery resends the original event. Both tables cascade with the application.
+
+## Audit log scope (Milestone 9)
+
+`AuditLog` has nullable `organizationId` and `applicationId` columns, set at write time from the event metadata and backfilled by the migration from existing rows. They are plain columns without foreign keys so the trail outlives deletions. The organization feed is served by the `(organizationId, createdAt, id)` index.

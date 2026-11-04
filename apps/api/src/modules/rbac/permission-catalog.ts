@@ -45,6 +45,7 @@ const organizationDescriptions: Record<OrganizationAction, string> = {
 	"application.create": "Create applications",
 	"application.list": "List applications",
 	"role.read": "View organization roles and their assignments",
+	"audit.read": "View the organization audit log",
 	"role.manage": "Create, edit and delete organization roles",
 	"role.assign": "Assign organization roles to members",
 };
