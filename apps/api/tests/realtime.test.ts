@@ -53,6 +53,7 @@ function decorated(bus: InProcessRealtimeBus, overrides: Partial<IConversationRe
 		conversationRepositoryImpl: inner(overrides),
 		realtimePublisher: new RealtimePublisher({ realtimeBus: bus }),
 		webhookDispatcher: { conversationEvent: async () => {}, messageEvent: async () => {} },
+		conversationNotifier: { conversationEvent: async () => {} },
 	});
 }
 
@@ -120,6 +121,7 @@ test("starting a conversation announces it, and a broken bus never fails the ope
 		conversationRepositoryImpl: inner(),
 		realtimePublisher: new RealtimePublisher({ realtimeBus: { publish: async () => { throw new Error("redis down"); }, subscribe: async () => async () => {}, close: async () => {} } }),
 		webhookDispatcher: { conversationEvent: async () => {}, messageEvent: async () => {} },
+		conversationNotifier: { conversationEvent: async () => {} },
 	});
 	const result = await broken.apply("app-1", "c-1", { type: "claim", agentId: "a-1" });
 	assert.equal(result.result, "ok");

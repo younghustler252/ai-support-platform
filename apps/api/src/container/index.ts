@@ -18,6 +18,7 @@ import { registerOrganizations } from "../modules/organizations/organizations.co
 import { registerRealtime } from "../modules/realtime/realtime.container.js";
 import { registerRbac } from "../modules/rbac/rbac.container.js";
 import { registerPlatformSettings } from "../modules/platform-settings/platform-settings.container.js";
+import { registerNotifications } from "../modules/notifications/notifications.container.js";
 import { registerWebhooks } from "../modules/webhooks/webhooks.container.js";
 import { registerTenancy } from "../modules/tenancy/tenancy.container.js";
 
@@ -48,6 +49,7 @@ registerApiKeys(container);
 registerRbac(container);
 registerCustomers(container);
 registerWebhooks(container);
+registerNotifications(container);
 registerRealtime(container);
 registerConversations(container);
 registerKnowledge(container);

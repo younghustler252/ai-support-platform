@@ -111,3 +111,28 @@ export function invitationEmail(input: { organizationName: string; inviterName: 
 		action: { label: "Accept invitation", url: actionUrl("/accept-invitation", input.token) },
 	});
 }
+
+export function conversationNotificationEmail(input: {
+	kind: "assigned" | "escalated";
+	applicationName: string;
+	subject: string | null;
+	applicationId: string;
+	conversationId: string;
+}): EmailContent {
+	const topic = input.subject ? `"${input.subject}"` : "a conversation";
+	const url = new URL(`/applications/${input.applicationId}/conversations/${input.conversationId}`, authConfig.frontendUrl).toString();
+	if (input.kind === "assigned") {
+		return render({
+			subject: `A conversation was assigned to you in ${input.applicationName}`,
+			heading: "A conversation was assigned to you",
+			paragraphs: [`${topic} in ${input.applicationName} is now assigned to you.`],
+			action: { label: "Open conversation", url },
+		});
+	}
+	return render({
+		subject: `A customer needs a human agent in ${input.applicationName}`,
+		heading: "A customer is waiting for an agent",
+		paragraphs: [`${topic} in ${input.applicationName} was handed over from the AI assistant and has no agent yet.`],
+		action: { label: "Open conversation", url },
+	});
+}

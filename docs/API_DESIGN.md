@@ -125,3 +125,16 @@ Each delivery is a POST with a JSON body `{id, type, createdAt, applicationId, d
 ## Audit log (Milestone 9)
 
 `GET /organizations/:organizationId/audit-logs` (`audit.read`, ADMIN) returns `{ logs, meta.nextCursor }` newest first. Filters: `applicationId`, `actorUserId`, `action` (prefix such as `role.` or `webhook.`), `from`, `to` (ISO dates), `limit`, `cursor`. Each entry has `id`, `action`, `resourceType`, `resourceId`, `applicationId`, `actor` (`id`, `email`, `displayName`, or null), `metadata` and `createdAt`. Only events that belong to the organization appear; sign-in and other account events are not included.
+
+## Notifications (Milestone 9)
+
+Signed-in user endpoints, always limited to the caller's own notifications:
+
+| Method | Path | Notes |
+| --- | --- | --- |
+| GET | `/me/notifications` | `unread=true`, `limit`, `cursor`; returns `notifications`, `meta.nextCursor` and `meta.unreadCount` |
+| POST | `/me/notifications/:notificationId/read` | 204; 404 when it is not yours |
+| POST | `/me/notifications/read-all` | 204 |
+| GET, PUT | `/me/notification-preferences` | `{ email: boolean }`, default true; the in-app inbox is always on |
+
+Types: `conversation.assigned` (sent to the new assignee when someone else assigns or transfers) and `conversation.escalated` (sent to organization and application owners and admins). Payload: `{ conversationId, subject }`. Emails link to `/applications/:applicationId/conversations/:conversationId` on the web app.

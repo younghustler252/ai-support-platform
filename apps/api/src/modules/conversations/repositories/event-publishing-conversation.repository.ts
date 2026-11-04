@@ -1,3 +1,4 @@
+import type { IConversationNotifier } from "../../notifications/services/conversation-notifier.js";
 import type { IWebhookDispatcher } from "../../webhooks/webhook-dispatcher.js";
 import type { RealtimePublisher } from "../../realtime/realtime-publisher.js";
 import type {
@@ -19,6 +20,7 @@ export class EventPublishingConversationRepository implements IConversationRepos
 		conversationRepositoryImpl: IConversationRepository;
 		realtimePublisher: RealtimePublisher;
 		webhookDispatcher: IWebhookDispatcher;
+		conversationNotifier: IConversationNotifier;
 	}) {}
 
 	private get inner(): IConversationRepository {
@@ -88,6 +90,7 @@ export class EventPublishingConversationRepository implements IConversationRepos
 		if (result.result === "ok" && result.changed) {
 			await this.deps.realtimePublisher.conversation({ applicationId, conversation: result.conversation, event: result.event });
 			await this.deps.webhookDispatcher.conversationEvent(applicationId, result.conversation, result.event);
+			await this.deps.conversationNotifier.conversationEvent(applicationId, result.conversation, result.event);
 		}
 		return result;
 	}

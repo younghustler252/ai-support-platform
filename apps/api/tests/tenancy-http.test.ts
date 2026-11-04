@@ -12,6 +12,7 @@ import { applicationRouter } from "../src/modules/applications/routes/applicatio
 import { membershipRouter } from "../src/modules/memberships/routes/membership.routes.js";
 import { webhookRouter } from "../src/modules/webhooks/routes/webhook.routes.js";
 import { auditRouter } from "../src/modules/audit/routes/audit.routes.js";
+import { notificationRouter } from "../src/modules/notifications/routes/notification.routes.js";
 import { planRouter } from "../src/modules/entitlements/routes/plan.routes.js";
 import { realtimeRouter } from "../src/modules/realtime/routes/realtime.routes.js";
 import { aiRouter } from "../src/modules/ai/routes/ai.routes.js";
@@ -95,6 +96,7 @@ function buildApp(options: { deny?: Error; authenticated?: boolean } = {}) {
 		aiController: asValue(controller),
 		webhookController: asValue(controller),
 		auditController: asValue(controller),
+		notificationController: asValue(controller),
 		realtimeController: asValue(controller),
 		planController: asValue(controller),
 		getCurrentUserUseCase: asValue({
@@ -127,6 +129,7 @@ function buildApp(options: { deny?: Error; authenticated?: boolean } = {}) {
 	server.use(planRouter());
 	server.use(webhookRouter());
 	server.use(auditRouter());
+	server.use(notificationRouter());
 	server.use(errorHandler);
 	return { server, calls, hits: () => controllerHits };
 }
@@ -288,6 +291,32 @@ test("webhook secret responses are never cached", async () => {
 
 		const invalid = await send(baseUrl, "POST", `${a}/webhooks`, {}, { url: "http://example.com/hook", events: [] });
 		assert.equal(invalid.status, 400);
+	});
+});
+
+test("notification routes need a signed-in user but no tenant membership", async () => {
+	const calls = [
+		{ method: "GET", path: "/me/notifications" },
+		{ method: "POST", path: "/me/notifications/read-all" },
+		{ method: "POST", path: `/me/notifications/${endpointId}/read` },
+		{ method: "GET", path: "/me/notification-preferences" },
+		{ method: "PUT", path: "/me/notification-preferences", body: { email: false } },
+	];
+	for (const call of calls) {
+		const anonymous = buildApp({ authenticated: false });
+		await withServer(anonymous.server, async (baseUrl) => {
+			assert.equal((await send(baseUrl, call.method, call.path, {}, call.body)).status, 401, call.path);
+		});
+		const signedIn = buildApp();
+		await withServer(signedIn.server, async (baseUrl) => {
+			assert.equal((await send(baseUrl, call.method, call.path, {}, call.body)).status, 200, call.path);
+			assert.equal(signedIn.calls.length, 0);
+		});
+	}
+	const { server } = buildApp();
+	await withServer(server, async (baseUrl) => {
+		assert.equal((await send(baseUrl, "POST", "/me/notifications/not-a-uuid/read")).status, 400);
+		assert.equal((await send(baseUrl, "PUT", "/me/notification-preferences", {}, { email: "yes" })).status, 400);
 	});
 });
 

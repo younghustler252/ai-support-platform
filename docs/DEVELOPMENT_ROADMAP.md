@@ -59,7 +59,7 @@ Status legend: [x] implemented and confirmed; [ ] pending; [~] implemented but a
 - [~] Real-time messages and Redis rate limiting (SSE with Redis pub/sub; presence not started)
 
 ## Milestone 9 — Platform Services
-- [ ] Notifications, email and webhooks
+- [x] Notifications (in-app inbox, email on assignment and escalation, preferences)
 - [~] Plans, entitlements and usage (catalog, limits enforced for applications, articles and AI; read-only plan endpoint)
 - [x] Outbound webhooks (signed, retried, SSRF-guarded, delivery log)
 - [x] Audit log API (tenant-scoped, filterable, keyset paged)

@@ -47,3 +47,7 @@ Migration: `20261101090000_dynamic_rbac`. The catalog sync runs when the server 
 ## Audit log scope (Milestone 9)
 
 `AuditLog` has nullable `organizationId` and `applicationId` columns, set at write time from the event metadata and backfilled by the migration from existing rows. They are plain columns without foreign keys so the trail outlives deletions. The organization feed is served by the `(organizationId, createdAt, id)` index.
+
+## Notifications (Milestone 9)
+
+`Notification` rows (`channel = IN_APP`) form each user's inbox with `readAt` for read state, indexed by `(recipientUserId, createdAt, id)` for paging. `NotificationPreference` holds one row per user who changed a setting; no row means email is on. It cascades with the user.

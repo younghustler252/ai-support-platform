@@ -50,6 +50,7 @@ export const tenancyConfig = {
 		searchQueryMaxLength: 500,
 		searchTermLimit: 12,
 	},
+	notifications: { maxRecipients: 20, subjectMaxLength: 120 },
 	webhooks: {
 		timeoutMs: 8000,
 		attempts: 6,
@@ -85,6 +86,7 @@ export const tenancyConfig = {
 		sendMessage: { limit: 120, windowMs: MINUTE },
 		manageKnowledge: { limit: 120, windowMs: MINUTE },
 		manageWebhooks: { limit: 60, windowMs: MINUTE },
+		notifications: { limit: 120, windowMs: MINUTE },
 		aiReply: { limit: 20, windowMs: MINUTE },
 		apiKeyRequests: { limit: 600, windowMs: MINUTE },
 		apiKeyIp: { limit: 300, windowMs: MINUTE },
