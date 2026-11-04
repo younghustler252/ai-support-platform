@@ -1,3 +1,4 @@
+import type { IWebhookDispatcher } from "../../webhooks/webhook-dispatcher.js";
 import type { RealtimePublisher } from "../../realtime/realtime-publisher.js";
 import type {
 	AppendInput,
@@ -14,7 +15,11 @@ import type { ConversationCommand } from "../domain/conversation-state.js";
 import type { IConversationRepository } from "./conversation.repository.interface.js";
 
 export class EventPublishingConversationRepository implements IConversationRepository {
-	constructor(private readonly deps: { conversationRepositoryImpl: IConversationRepository; realtimePublisher: RealtimePublisher }) {}
+	constructor(private readonly deps: {
+		conversationRepositoryImpl: IConversationRepository;
+		realtimePublisher: RealtimePublisher;
+		webhookDispatcher: IWebhookDispatcher;
+	}) {}
 
 	private get inner(): IConversationRepository {
 		return this.deps.conversationRepositoryImpl;
@@ -49,21 +54,27 @@ export class EventPublishingConversationRepository implements IConversationRepos
 		input: { customerId: string; subject: string | null; body: string },
 	): Promise<{ conversation: ConversationView; message: MessageView }> {
 		const created = await this.inner.createWithMessage(applicationId, input);
-		const { realtimePublisher } = this.deps;
+		const { realtimePublisher, webhookDispatcher } = this.deps;
 		await realtimePublisher.conversation({ applicationId, conversation: created.conversation, event: "created" });
 		await realtimePublisher.message({ applicationId, message: created.message, assigneeUserId: null });
+		await webhookDispatcher.conversationEvent(applicationId, created.conversation, "created");
+		await webhookDispatcher.messageEvent(applicationId, created.message);
 		return created;
 	}
 
 	async appendMessage(applicationId: string, conversationId: string, input: AppendInput): Promise<AppendResult> {
 		const result = await this.inner.appendMessage(applicationId, conversationId, input);
 		if (result.result !== "ok") return result;
-		const { realtimePublisher } = this.deps;
+		const { realtimePublisher, webhookDispatcher } = this.deps;
 		if (result.reopened) {
 			const conversation = await this.inner.find(applicationId, conversationId);
-			if (conversation) await realtimePublisher.conversation({ applicationId, conversation, event: "reopened_by_customer" });
+			if (conversation) {
+				await realtimePublisher.conversation({ applicationId, conversation, event: "reopened_by_customer" });
+				await webhookDispatcher.conversationEvent(applicationId, conversation, "reopened_by_customer");
+			}
 		}
 		await realtimePublisher.message({ applicationId, message: result.message, assigneeUserId: result.state?.assigneeUserId ?? null });
+		await webhookDispatcher.messageEvent(applicationId, result.message);
 		return result;
 	}
 
@@ -76,6 +87,7 @@ export class EventPublishingConversationRepository implements IConversationRepos
 		const result = await this.inner.apply(applicationId, conversationId, command, context);
 		if (result.result === "ok" && result.changed) {
 			await this.deps.realtimePublisher.conversation({ applicationId, conversation: result.conversation, event: result.event });
+			await this.deps.webhookDispatcher.conversationEvent(applicationId, result.conversation, result.event);
 		}
 		return result;
 	}

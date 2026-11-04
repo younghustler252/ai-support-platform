@@ -61,6 +61,7 @@ Status legend: [x] implemented and confirmed; [ ] pending; [~] implemented but a
 ## Milestone 9 — Platform Services
 - [ ] Notifications, email and webhooks
 - [~] Plans, entitlements and usage (catalog, limits enforced for applications, articles and AI; read-only plan endpoint)
+- [x] Outbound webhooks (signed, retried, SSRF-guarded, delivery log)
 - [ ] Audit log API, settings, notifications and webhooks
 
 ## Milestone 10 — Developer Dashboard

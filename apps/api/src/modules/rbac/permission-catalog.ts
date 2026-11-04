@@ -70,6 +70,8 @@ const applicationDescriptions: Record<ApplicationAction, string> = {
 	"conversation.assign": "Assign conversations to any agent",
 	"knowledge.read": "View knowledge base articles",
 	"knowledge.manage": "Create, edit, publish and delete knowledge base articles",
+	"webhook.read": "View webhook endpoints and their delivery history",
+	"webhook.manage": "Create, edit, delete and test webhook endpoints",
 };
 
 const narrowScopesByCode: Record<string, PermissionScopeName[]> = {

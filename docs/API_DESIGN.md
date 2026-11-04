@@ -104,3 +104,20 @@ Events carry no message text; fetch the data through the normal endpoints. Inter
 ## Plans and limits (Milestone 9)
 
 `GET /organizations/:organizationId/plan` (`organization.read`) returns the plan and, for each feature, whether it is enabled, its limit and current usage where it is counted per organization. Features: `applications`, `knowledge_articles` (per application), `ai_assistant` and `ai_replies_monthly`. Exceeding a plan limit returns 403 `LIMIT_EXCEEDED` with a message naming the limit; when the monthly AI allowance is used up, conversations hand over to human agents instead of failing. Organizations without a plan use `free`. Plans cannot be changed through the API yet.
+
+## Outbound webhooks (Milestone 9)
+
+Base path `/organizations/:organizationId/applications/:applicationId/webhooks`. Reads need `webhook.read` (MEMBER), changes need `webhook.manage` (ADMIN).
+
+| Method | Path | Notes |
+| --- | --- | --- |
+| GET, POST | `/` | create takes `url` (https), `events`, `description`; the signing `secret` is returned only on create |
+| GET, PATCH, DELETE | `/:endpointId` | PATCH accepts `url`, `events`, `description`, `enabled`; re-enabling clears the failure counter |
+| POST | `/:endpointId/rotate-secret` | returns the new `secret` once |
+| POST | `/:endpointId/test` | queues a `webhook.test` event |
+| GET | `/:endpointId/deliveries` | cursor paged delivery log |
+| POST | `/:endpointId/deliveries/:deliveryId/redeliver` | resets and resends a finished delivery |
+
+Events: `conversation.created`, `conversation.assigned`, `conversation.escalated`, `conversation.reopened`, `conversation.resolved`, `conversation.closed`, `message.created`. Internal notes and system messages are never sent.
+
+Each delivery is a POST with a JSON body `{id, type, createdAt, applicationId, data}` and headers `X-SupportAI-Event`, `X-SupportAI-Delivery`, `X-SupportAI-Timestamp` and `X-SupportAI-Signature: v1=<hex>`, where the signature is HMAC-SHA256 of `${timestamp}.${rawBody}` with the endpoint secret. Verify it and reject old timestamps to stop replays. Respond with any 2xx within 8 seconds. Network errors, 408, 429 and 5xx are retried up to 6 times with exponential backoff; other 4xx fail at once. A 410 response, or 20 consecutive failed deliveries, disables the endpoint. Each application can have 10 endpoints. Targets must be public https hosts; redirects are not followed and private addresses are blocked, including after DNS resolution.

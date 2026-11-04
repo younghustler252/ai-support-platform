@@ -10,6 +10,7 @@ import { MemoryRateLimiter } from "../src/foundation/rate-limit/rate-limiter.js"
 import { apiKeyRouter } from "../src/modules/api-keys/routes/api-key.routes.js";
 import { applicationRouter } from "../src/modules/applications/routes/application.routes.js";
 import { membershipRouter } from "../src/modules/memberships/routes/membership.routes.js";
+import { webhookRouter } from "../src/modules/webhooks/routes/webhook.routes.js";
 import { planRouter } from "../src/modules/entitlements/routes/plan.routes.js";
 import { realtimeRouter } from "../src/modules/realtime/routes/realtime.routes.js";
 import { aiRouter } from "../src/modules/ai/routes/ai.routes.js";
@@ -29,6 +30,7 @@ const invitation = "55555555-5555-4555-8555-555555555555";
 const role = "66666666-6666-4666-8666-666666666666";
 const conversationId = "77777777-7777-4777-8777-777777777777";
 const articleId = "99999999-9999-4999-8999-999999999999";
+const endpointId = "88888888-8888-4888-8888-888888888888";
 const customerId = "88888888-8888-4888-8888-888888888888";
 
 const identity = {
@@ -90,6 +92,7 @@ function buildApp(options: { deny?: Error; authenticated?: boolean } = {}) {
 		serviceConversationController: asValue(controller),
 		knowledgeController: asValue(controller),
 		aiController: asValue(controller),
+		webhookController: asValue(controller),
 		realtimeController: asValue(controller),
 		planController: asValue(controller),
 		getCurrentUserUseCase: asValue({
@@ -120,6 +123,7 @@ function buildApp(options: { deny?: Error; authenticated?: boolean } = {}) {
 	server.use(aiRouter());
 	server.use(realtimeRouter());
 	server.use(planRouter());
+	server.use(webhookRouter());
 	server.use(errorHandler);
 	return { server, calls, hits: () => controllerHits };
 }
@@ -186,6 +190,15 @@ const routes: Array<{ method: string; path: string; scope: Call["scope"]; action
 	{ method: "POST", path: `${a}/knowledge/articles/${articleId}/publish`, scope: "application", action: "knowledge.manage" },
 	{ method: "POST", path: `${a}/knowledge/articles/${articleId}/unpublish`, scope: "application", action: "knowledge.manage" },
 	{ method: "DELETE", path: `${a}/knowledge/articles/${articleId}`, scope: "application", action: "knowledge.manage" },
+	{ method: "GET", path: `${a}/webhooks`, scope: "application", action: "webhook.read" },
+	{ method: "POST", path: `${a}/webhooks`, scope: "application", action: "webhook.manage" },
+	{ method: "GET", path: `${a}/webhooks/${endpointId}`, scope: "application", action: "webhook.read" },
+	{ method: "PATCH", path: `${a}/webhooks/${endpointId}`, scope: "application", action: "webhook.manage" },
+	{ method: "DELETE", path: `${a}/webhooks/${endpointId}`, scope: "application", action: "webhook.manage" },
+	{ method: "POST", path: `${a}/webhooks/${endpointId}/rotate-secret`, scope: "application", action: "webhook.manage" },
+	{ method: "POST", path: `${a}/webhooks/${endpointId}/test`, scope: "application", action: "webhook.manage" },
+	{ method: "GET", path: `${a}/webhooks/${endpointId}/deliveries`, scope: "application", action: "webhook.read" },
+	{ method: "POST", path: `${a}/webhooks/${endpointId}/deliveries/${articleId}/redeliver`, scope: "application", action: "webhook.manage" },
 	{ method: "GET", path: `${o}/plan`, scope: "organization", action: "organization.read" },
 	{ method: "GET", path: `${a}/events`, scope: "application", action: "conversation.read" },
 	{ method: "GET", path: `${a}/ai/settings`, scope: "application", action: "application.read" },
@@ -255,6 +268,22 @@ test("api key creation and rotation responses are never cached", async () => {
 		const rotated = await send(baseUrl, "POST", `${a}/api-keys/${key}/rotate`);
 		assert.equal(rotated.status, 200);
 		assert.equal(rotated.headers.get("cache-control"), "no-store");
+	});
+});
+
+test("webhook secret responses are never cached", async () => {
+	const { server } = buildApp();
+	await withServer(server, async (baseUrl) => {
+		const created = await send(baseUrl, "POST", `${a}/webhooks`, {}, { url: "https://example.com/hook", events: ["message.created"] });
+		assert.equal(created.status, 200);
+		assert.equal(created.headers.get("cache-control"), "no-store");
+
+		const rotated = await send(baseUrl, "POST", `${a}/webhooks/${endpointId}/rotate-secret`);
+		assert.equal(rotated.status, 200);
+		assert.equal(rotated.headers.get("cache-control"), "no-store");
+
+		const invalid = await send(baseUrl, "POST", `${a}/webhooks`, {}, { url: "http://example.com/hook", events: [] });
+		assert.equal(invalid.status, 400);
 	});
 });
 

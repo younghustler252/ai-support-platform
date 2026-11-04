@@ -52,6 +52,8 @@ export const applicationPolicy = {
 	"conversation.assign": { minimum: "ADMIN" },
 	"knowledge.read": { minimum: "MEMBER" },
 	"knowledge.manage": { minimum: "ADMIN" },
+	"webhook.read": { minimum: "ADMIN" },
+	"webhook.manage": { minimum: "ADMIN" },
 } as const satisfies Record<string, ApplicationRule>;
 
 export type ApplicationAction = keyof typeof applicationPolicy;

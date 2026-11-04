@@ -31,6 +31,8 @@ const envSchema = z.object({
 	AUTH_EMAIL_API_KEY: z.string().optional(),
 	AUTH_EMAIL_FROM: z.string().optional(),
 	REDIS_URL: z.string().regex(/^rediss?:\/\//, "REDIS_URL must start with redis:// or rediss://").optional(),
+	WEBHOOK_SIGNING_KEY: z.string().min(32).optional(),
+	WEBHOOK_ALLOW_PRIVATE_TARGETS: z.enum(["true", "false"]).default("false"),
 	AI_API_KEY: z.string().min(1).optional(),
 	AI_BASE_URL: z.url().default("https://api.openai.com/v1"),
 	AI_MODEL: z.string().min(1).default("gpt-4o-mini"),
@@ -44,6 +46,12 @@ const envSchema = z.object({
 		});
 	}
 	if (value.NODE_ENV !== "production") return;
+	if (!value.WEBHOOK_SIGNING_KEY) {
+		context.addIssue({ code: "custom", path: ["WEBHOOK_SIGNING_KEY"], message: "WEBHOOK_SIGNING_KEY is required in production" });
+	}
+	if (value.WEBHOOK_ALLOW_PRIVATE_TARGETS === "true") {
+		context.addIssue({ code: "custom", path: ["WEBHOOK_ALLOW_PRIVATE_TARGETS"], message: "Private webhook targets are not allowed in production" });
+	}
 	if (!value.REDIS_URL) {
 		context.addIssue({ code: "custom", path: ["REDIS_URL"], message: "REDIS_URL is required in production" });
 	}

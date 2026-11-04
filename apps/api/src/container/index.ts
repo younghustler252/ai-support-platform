@@ -18,6 +18,7 @@ import { registerOrganizations } from "../modules/organizations/organizations.co
 import { registerRealtime } from "../modules/realtime/realtime.container.js";
 import { registerRbac } from "../modules/rbac/rbac.container.js";
 import { registerPlatformSettings } from "../modules/platform-settings/platform-settings.container.js";
+import { registerWebhooks } from "../modules/webhooks/webhooks.container.js";
 import { registerTenancy } from "../modules/tenancy/tenancy.container.js";
 
 export const container = createContainer({
@@ -46,6 +47,7 @@ registerApplications(container);
 registerApiKeys(container);
 registerRbac(container);
 registerCustomers(container);
+registerWebhooks(container);
 registerRealtime(container);
 registerConversations(container);
 registerKnowledge(container);

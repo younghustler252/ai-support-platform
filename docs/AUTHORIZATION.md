@@ -36,4 +36,4 @@ Support permissions added in Milestone 6: `customer.read`, `customer.manage`, `c
 
 ## Knowledge permissions (Milestone 7)
 
-`knowledge.read` (MEMBER) and `knowledge.manage` (ADMIN) are application permissions and can be granted to custom roles. AI settings reuse `application.read` and `application.update`.
+`knowledge.read` (MEMBER) and `knowledge.manage` (ADMIN) are application permissions and can be granted to custom roles. AI settings reuse `application.read` and `application.update`. `webhook.read` (MEMBER) and `webhook.manage` (ADMIN) are application permissions for outbound webhooks.

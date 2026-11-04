@@ -5,7 +5,8 @@ import { logger } from "./foundation/logging/logger.js";
 import { ConflictError, NotFoundError } from "./foundation/errors/app-error.js";
 import { prisma } from "./infrastructure/database/prisma.js";
 import { EmailDeliveryError, type EmailTransport } from "./infrastructure/email/email-transport.js";
-import { queueNames, redisConnectionOptions, type AiReplyJob, type EmailJob } from "./infrastructure/queue/queue-config.js";
+import { queueNames, redisConnectionOptions, type AiReplyJob, type EmailJob, type WebhookJob } from "./infrastructure/queue/queue-config.js";
+import type { DeliverWebhookUseCase } from "./modules/webhooks/usecases/deliver-webhook.usecase.js";
 import type { GenerateAiReplyUseCase } from "./modules/ai/usecases/generate-ai-reply.usecase.js";
 
 const connection = redisConnectionOptions();
@@ -49,7 +50,23 @@ const aiWorker = new Worker<AiReplyJob>(
 	{ connection, concurrency: 5 },
 );
 
-for (const [name, worker] of [["email", emailWorker], ["ai", aiWorker]] as const) {
+const webhookWorker = new Worker<WebhookJob>(
+	queueNames.webhooks,
+	async (job) => {
+		const scope = container.createScope();
+		try {
+			const outcome = await scope
+				.resolve<DeliverWebhookUseCase>("deliverWebhookUseCase")
+				.execute({ deliveryId: job.data.deliveryId, final: job.attemptsMade + 1 >= (job.opts.attempts ?? 1) });
+			if (outcome === "retry") throw new Error("Webhook delivery failed, retrying");
+		} finally {
+			await scope.dispose();
+		}
+	},
+	{ connection, concurrency: 10 },
+);
+
+for (const [name, worker] of [["email", emailWorker], ["ai", aiWorker], ["webhooks", webhookWorker]] as const) {
 	worker.on("failed", (job, error) => {
 		logger.warn("worker.job_failed", { queue: name, jobId: job?.id, attempts: job?.attemptsMade, error });
 	});
@@ -69,7 +86,7 @@ async function shutdown(signal: string): Promise<void> {
 	const forceExit = setTimeout(() => process.exit(1), 20_000);
 	forceExit.unref();
 	try {
-		await Promise.all([emailWorker.close(), aiWorker.close()]);
+		await Promise.all([emailWorker.close(), aiWorker.close(), webhookWorker.close()]);
 		await prisma.$disconnect();
 		process.exit(0);
 	} catch (error) {

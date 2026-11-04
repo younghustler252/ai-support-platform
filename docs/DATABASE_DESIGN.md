@@ -38,3 +38,8 @@ Migration: `20261101090000_dynamic_rbac`. The catalog sync runs when the server 
 - `KnowledgeChunk` holds roughly 900 character chunks, each prefixed with the article title, and a `tsvector` column (`simple` dictionary, language neutral) kept current by a database trigger, with a GIN index. A trigger is used instead of a generated column because Prisma cannot represent generated columns and would try to drop their default on every `migrate dev`. Chunks are rebuilt whenever title or content change and deleted with the article.
 - Only chunks of published articles in the caller's application are searched. Embeddings can be added later as a nullable column without changing the API.
 - AI settings live in `ApplicationSetting.config.ai`; AI usage is recorded as `UsageEvent` rows with metric `ai.request`.
+
+## Webhooks (Milestone 9)
+
+- `WebhookEndpoint` belongs to an application and stores `url`, subscribed `events`, `enabled`, `secretVersion`, `consecutiveFailures` and `disabledReason`. The secret itself is never stored: it is derived as HMAC of `endpointId:secretVersion` with `WEBHOOK_SIGNING_KEY`, and rotating bumps the version.
+- `WebhookDelivery` keeps the exact payload, status (PENDING, SUCCEEDED, FAILED), attempt count, last response status and a truncated error, so redelivery resends the original event. Both tables cascade with the application.

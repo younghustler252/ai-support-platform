@@ -65,6 +65,12 @@ enum ConversationStatus {
   CLOSED
 }
 
+enum WebhookDeliveryStatus {
+  PENDING
+  SUCCEEDED
+  FAILED
+}
+
 enum MessageSender {
   CUSTOMER
   AI
@@ -210,6 +216,7 @@ model Application {
   settings       ApplicationSetting?
   keys           ApiKey[]
   knowledge      KnowledgeArticle[]
+  webhooks       WebhookEndpoint[]
   customers      Customer[]
   conversations  Conversation[]
   notifications  Notification[]
@@ -496,4 +503,40 @@ model AuditLog {
   @@index([resourceType, resourceId, createdAt])
   @@index([actorUserId, createdAt])
   @@index([action, createdAt])
+}
+
+model WebhookEndpoint {
+  id                  String            @id @default(uuid())
+  applicationId       String
+  url                 String
+  description         String?
+  events              String[]
+  enabled             Boolean           @default(true)
+  secretVersion       Int               @default(1)
+  consecutiveFailures Int               @default(0)
+  disabledReason      String?
+  createdAt           DateTime          @default(now())
+  updatedAt           DateTime          @updatedAt
+  application         Application       @relation(fields: [applicationId], references: [id], onDelete: Cascade)
+  deliveries          WebhookDelivery[]
+
+  @@index([applicationId, enabled])
+}
+
+model WebhookDelivery {
+  id             String                @id @default(uuid())
+  endpointId     String
+  applicationId  String
+  eventType      String
+  payload        Json
+  status         WebhookDeliveryStatus @default(PENDING)
+  attempts       Int                   @default(0)
+  responseStatus Int?
+  lastError      String?
+  createdAt      DateTime              @default(now())
+  deliveredAt    DateTime?
+  endpoint       WebhookEndpoint       @relation(fields: [endpointId], references: [id], onDelete: Cascade)
+
+  @@index([endpointId, createdAt])
+  @@index([status, createdAt])
 }

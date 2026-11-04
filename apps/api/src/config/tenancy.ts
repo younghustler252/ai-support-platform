@@ -37,6 +37,7 @@ export const tenancyConfig = {
 		rolesPerMembership: 10,
 		openConversationsPerCustomer: 5,
 		articlesPerApplication: 500,
+		webhooksPerApplication: 10,
 		aiRepliesPerApplicationPerDay: 2000,
 	},
 	knowledge: {
@@ -48,6 +49,13 @@ export const tenancyConfig = {
 		searchResultLimit: 5,
 		searchQueryMaxLength: 500,
 		searchTermLimit: 12,
+	},
+	webhooks: {
+		timeoutMs: 8000,
+		attempts: 6,
+		failureThreshold: 20,
+		urlMaxLength: 2000,
+		errorMaxLength: 300,
 	},
 	ai: {
 		contextMessages: 12,
@@ -76,6 +84,7 @@ export const tenancyConfig = {
 		sendAgentMessage: { limit: 120, windowMs: MINUTE },
 		sendMessage: { limit: 120, windowMs: MINUTE },
 		manageKnowledge: { limit: 120, windowMs: MINUTE },
+		manageWebhooks: { limit: 60, windowMs: MINUTE },
 		aiReply: { limit: 20, windowMs: MINUTE },
 		apiKeyRequests: { limit: 600, windowMs: MINUTE },
 		apiKeyIp: { limit: 300, windowMs: MINUTE },

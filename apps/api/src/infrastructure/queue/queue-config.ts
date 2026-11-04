@@ -3,7 +3,11 @@ import type { ConnectionOptions, DefaultJobOptions } from "bullmq";
 import { env } from "../../config/env.js";
 import type { EmailMessage } from "../email/email-transport.js";
 
-export const queueNames = { email: "email", ai: "ai" } as const;
+export const queueNames = { email: "email", ai: "ai", webhooks: "webhooks" } as const;
+
+export interface WebhookJob {
+	deliveryId: string;
+}
 
 export interface EmailJob {
 	message: EmailMessage;
