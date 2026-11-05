@@ -18,6 +18,9 @@ await syncPlanCatalog(prisma);
 
 const server = createApp().listen(env.PORT, () => {
 	logger.info("server.started", { port: env.PORT });
+	if (env.REDIS_URL && env.NODE_ENV !== "production") {
+		logger.info("worker.required", { message: "Emails, AI replies and webhooks are processed by the worker. Run: npm run dev:worker" });
+	}
 });
 const stopMaintenance = startAuthMaintenance(container);
 
