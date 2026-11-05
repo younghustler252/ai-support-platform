@@ -54,11 +54,14 @@ export function useAsync<T>(load: () => Promise<T>) {
 
 export function useHashToken(): string | null | undefined {
 	const [token, setToken] = useState<string | null | undefined>(undefined);
+	const read = useRef<string | null | undefined>(undefined);
 
 	useEffect(() => {
-		const value = new URLSearchParams(window.location.hash.slice(1)).get("token");
-		setToken(value);
-		if (value) window.history.replaceState(null, "", window.location.pathname + window.location.search);
+		if (read.current === undefined) {
+			read.current = new URLSearchParams(window.location.hash.slice(1)).get("token");
+			if (read.current) window.history.replaceState(null, "", window.location.pathname + window.location.search);
+		}
+		setToken(read.current);
 	}, []);
 
 	return token;
