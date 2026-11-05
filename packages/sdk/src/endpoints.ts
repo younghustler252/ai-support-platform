@@ -6,6 +6,7 @@ import type {
 	Organization,
 	OrganizationWithRole,
 	RegisterInput,
+	TenantRole,
 	UpdateApplicationInput,
 	User,
 } from "./types";
@@ -82,5 +83,12 @@ export function applicationsApi(http: HttpClient) {
 		async update(organizationId: string, applicationId: string, input: UpdateApplicationInput): Promise<Application> {
 			return (await http.patch<{ application: Application }>(`${base(organizationId)}/${applicationId}`, input)).application;
 		},
+	};
+}
+
+export function invitationsApi(http: HttpClient) {
+	return {
+		accept: (token: string) =>
+			http.post<{ organization: { id: string; name: string }; role: TenantRole }>("/invitations/accept", { token }),
 	};
 }

@@ -1,6 +1,7 @@
 "use client";
 
 import { fieldErrors } from "@platform/sdk";
+import Link from "next/link";
 import { useState, type FormEvent } from "react";
 
 import { Alert, Button, Field, Spinner } from "@/components/ui";
@@ -43,9 +44,11 @@ export default function HomePage() {
 			{list.length > 0 ? (
 				<ul className="list">
 					{list.map((organization) => (
-						<li key={organization.id} className="list-item">
-							<span>{organization.name}</span>
-							<span className="badge">{organization.role.toLowerCase()}</span>
+						<li key={organization.id}>
+							<Link href={`/o/${organization.id}`} className="list-item">
+								<span>{organization.name}</span>
+								<span className="badge">{organization.role.toLowerCase()}</span>
+							</Link>
 						</li>
 					))}
 				</ul>

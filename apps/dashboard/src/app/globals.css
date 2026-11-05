@@ -119,7 +119,9 @@ h2 {
 	margin-bottom: 6px;
 }
 
-.field input {
+.field input,
+.field textarea,
+.field select {
 	width: 100%;
 	padding: 10px 12px;
 	font: inherit;
@@ -129,7 +131,12 @@ h2 {
 	border-radius: 8px;
 }
 
-.field input[aria-invalid="true"] {
+.field textarea {
+	resize: vertical;
+}
+
+.field input[aria-invalid="true"],
+.field textarea[aria-invalid="true"] {
 	border-color: var(--danger);
 }
 
@@ -305,4 +312,51 @@ h2 {
 	justify-content: space-between;
 	gap: 12px;
 	margin-bottom: 16px;
+}
+
+.crumbs {
+	display: flex;
+	align-items: center;
+	flex-wrap: wrap;
+	gap: 8px;
+	margin-bottom: 20px;
+	font-size: 0.875rem;
+	color: var(--muted);
+}
+
+.crumbs select {
+	font: inherit;
+	color: var(--text);
+	background: var(--surface);
+	border: 1px solid var(--border);
+	border-radius: 8px;
+	padding: 6px 10px;
+	max-width: 100%;
+}
+
+.tabs {
+	display: flex;
+	gap: 4px;
+	overflow-x: auto;
+	border-bottom: 1px solid var(--border);
+	margin-bottom: 24px;
+}
+
+.tab {
+	padding: 10px 14px;
+	text-decoration: none;
+	color: var(--muted);
+	border-bottom: 2px solid transparent;
+	white-space: nowrap;
+}
+
+.tab[aria-current="page"] {
+	color: var(--text);
+	border-bottom-color: var(--accent);
+	font-weight: 600;
+}
+
+.list-item small {
+	display: block;
+	color: var(--muted);
 }

@@ -1,4 +1,4 @@
-import { useId, type ButtonHTMLAttributes, type InputHTMLAttributes, type ReactNode } from "react";
+import { useId, type ButtonHTMLAttributes, type InputHTMLAttributes, type ReactNode, type TextareaHTMLAttributes } from "react";
 
 export function Button({
 	variant = "primary",
@@ -21,6 +21,21 @@ export function Field({ label, error, hint, ...input }: InputHTMLAttributes<HTML
 		<div className="field">
 			<label htmlFor={id}>{label}</label>
 			<input id={id} aria-invalid={error ? true : undefined} aria-describedby={error || hint ? `${id}-note` : undefined} {...input} />
+			{error || hint ? (
+				<p id={`${id}-note`} className={error ? "field-error" : "field-hint"}>
+					{error ?? hint}
+				</p>
+			) : null}
+		</div>
+	);
+}
+
+export function TextArea({ label, error, hint, ...input }: TextareaHTMLAttributes<HTMLTextAreaElement> & { label: string; error?: string; hint?: string }) {
+	const id = useId();
+	return (
+		<div className="field">
+			<label htmlFor={id}>{label}</label>
+			<textarea id={id} rows={4} aria-invalid={error ? true : undefined} aria-describedby={error || hint ? `${id}-note` : undefined} {...input} />
 			{error || hint ? (
 				<p id={`${id}-note`} className={error ? "field-error" : "field-hint"}>
 					{error ?? hint}

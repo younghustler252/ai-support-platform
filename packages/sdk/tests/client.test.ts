@@ -182,3 +182,16 @@ test("field errors are read from validation details", () => {
 	assert.deepEqual(fieldErrors(new Error("x")), {});
 	assert.deepEqual(fieldErrors(new ApiError({ status: 500, code: "X", message: "x" })), {});
 });
+
+test("accepting an invitation posts the token with authentication", async () => {
+	const { client, calls } = setup((call) => {
+		if (login(call)) return json(200, { data: { user, accessToken: "t", expiresIn: 900 } });
+		return json(200, { data: { organization: { id: "o1", name: "Acme" }, role: "MEMBER" } });
+	});
+	await client.auth.login({ email: "a@example.com", password: "pw" });
+	const result = await client.invitations.accept("token-value");
+	assert.deepEqual(result, { organization: { id: "o1", name: "Acme" }, role: "MEMBER" });
+	assert.equal(calls.at(-1)?.url, "https://api.test/api/v1/invitations/accept");
+	assert.equal(calls.at(-1)?.body, JSON.stringify({ token: "token-value" }));
+	assert.equal(calls.at(-1)?.headers.Authorization, "Bearer t");
+});

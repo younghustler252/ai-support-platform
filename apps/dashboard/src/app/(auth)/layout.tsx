@@ -3,6 +3,7 @@
 import { useRouter } from "next/navigation";
 import { useEffect, type ReactNode } from "react";
 
+import { safeNext } from "@/lib/navigation";
 import { useSession } from "@/lib/session";
 
 export default function AuthLayout({ children }: { children: ReactNode }) {
@@ -10,7 +11,7 @@ export default function AuthLayout({ children }: { children: ReactNode }) {
 	const router = useRouter();
 
 	useEffect(() => {
-		if (state.status === "authenticated") router.replace("/");
+		if (state.status === "authenticated") router.replace(safeNext(window.location.search) ?? "/");
 	}, [state.status, router]);
 
 	return (
