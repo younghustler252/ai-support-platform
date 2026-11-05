@@ -1,13 +1,20 @@
+import type { Metadata, Viewport } from "next";
 import type { ReactNode } from "react";
 
-interface RootLayoutProps {
-	children: ReactNode;
-}
+import { SessionProvider } from "@/lib/session";
 
-export default function RootLayout({ children }: RootLayoutProps) {
+import "./globals.css";
+
+export const metadata: Metadata = { title: { default: "SupportAI", template: "%s · SupportAI" } };
+
+export const viewport: Viewport = { width: "device-width", initialScale: 1 };
+
+export default function RootLayout({ children }: { children: ReactNode }) {
 	return (
 		<html lang="en">
-			<body>{children}</body>
+			<body>
+				<SessionProvider>{children}</SessionProvider>
+			</body>
 		</html>
 	);
 }

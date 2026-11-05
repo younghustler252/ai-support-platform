@@ -87,3 +87,10 @@ Status legend: [x] implemented and confirmed; [ ] pending; [~] implemented but a
 - Avoid global unscoped repository helpers that could leak tenant data.
 - Mark a task [x] only after verification; keep unverified changes [~].
 - Provide a commit message for every implementation change.
+
+## Milestone 10 — Dashboard
+- [~] Shared SDK (`@platform/sdk`: typed client, token refresh, error mapping; unit tests written, unrun)
+- [~] Foundation and auth screens (sign in, register, verify, forgot and reset password, organization list; unrun)
+- [ ] Applications and organization switcher, invitation acceptance
+- [ ] Conversations inbox and conversation view with live updates
+- [ ] Knowledge, AI and widget settings, webhooks, team and roles, audit log

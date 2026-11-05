@@ -13,7 +13,7 @@ export function createClient(config: ClientConfig) {
 
 export type Client = ReturnType<typeof createClient>;
 
-export { ApiError, isApiError } from "./errors";
+export { ApiError, fieldErrors, isApiError } from "./errors";
 export { memoryTokenStore } from "./token-store";
 export type { AccessToken, TokenStore } from "./token-store";
 export type { ClientConfig, RequestOptions } from "./http";

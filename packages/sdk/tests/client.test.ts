@@ -1,7 +1,7 @@
 import assert from "node:assert/strict";
 import test from "node:test";
 
-import { ApiError, createClient } from "../src/index";
+import { ApiError, createClient, fieldErrors } from "../src/index";
 
 interface Call {
 	url: string;
@@ -169,4 +169,16 @@ test("custom headers are added to every request", async () => {
 	const { client, calls } = setup(() => json(200, { data: { organizations: [] } }), { headers: () => ({ "X-Client": "mobile" }) });
 	await client.http.get("/organizations", { auth: false });
 	assert.equal(calls[0]?.headers["X-Client"], "mobile");
+});
+
+test("field errors are read from validation details", () => {
+	const error = new ApiError({
+		status: 400,
+		code: "VALIDATION_ERROR",
+		message: "Request validation failed",
+		details: { issues: [{ path: "email", message: "Invalid email" }, { path: "email", message: "Second" }, { path: "password", message: "Too short" }] },
+	});
+	assert.deepEqual(fieldErrors(error), { email: "Invalid email", password: "Too short" });
+	assert.deepEqual(fieldErrors(new Error("x")), {});
+	assert.deepEqual(fieldErrors(new ApiError({ status: 500, code: "X", message: "x" })), {});
 });
