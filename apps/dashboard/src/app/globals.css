@@ -513,3 +513,13 @@ h2 {
 	gap: 8px;
 	font-size: 0.875rem;
 }
+
+.actions select {
+	font: inherit;
+	color: var(--text);
+	background: var(--surface);
+	border: 1px solid var(--border);
+	border-radius: 8px;
+	padding: 6px 10px;
+	max-width: 100%;
+}

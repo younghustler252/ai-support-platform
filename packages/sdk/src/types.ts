@@ -129,3 +129,11 @@ export interface AgentConversationEvent {
 }
 
 export type AgentEvent = AgentMessageEvent | AgentConversationEvent;
+
+export interface ApplicationMember {
+	userId: string;
+	email: string;
+	displayName: string | null;
+	role: TenantRole;
+	addedAt: string;
+}

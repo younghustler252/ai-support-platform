@@ -1,4 +1,4 @@
-import { applicationsApi, authApi, conversationsApi, eventsApi, invitationsApi, organizationsApi } from "./endpoints";
+import { applicationsApi, authApi, conversationsApi, eventsApi, invitationsApi, membersApi, organizationsApi } from "./endpoints";
 import { HttpClient, type ClientConfig } from "./http";
 
 export function createClient(config: ClientConfig) {
@@ -11,6 +11,7 @@ export function createClient(config: ClientConfig) {
 		invitations: invitationsApi(http),
 		conversations: conversationsApi(http),
 		events: eventsApi(http),
+		members: membersApi(http),
 	};
 }
 

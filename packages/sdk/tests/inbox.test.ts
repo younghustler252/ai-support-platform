@@ -85,3 +85,14 @@ test("events.subscribe authenticates, parses events and reconnects", async () =>
 	assert.equal(events.length, 1);
 	assert.equal(headers[0], "Bearer tok");
 });
+
+test("members.listForApplication unwraps the member list", async () => {
+	let url = "";
+	const client = authedClient(async (input) => {
+		url = String(input);
+		return json(200, { data: { members: [{ userId: "u1", email: "a@example.com", displayName: null, role: "MEMBER", addedAt: "2026-01-01" }] } });
+	});
+	const members = await client.members.listForApplication("o1", "a1");
+	assert.equal(members[0]!.userId, "u1");
+	assert.ok(url.endsWith("/organizations/o1/applications/a1/members"));
+});

@@ -1,6 +1,6 @@
 "use client";
 
-import type { Conversation, ConversationAction, Message } from "@platform/sdk";
+import type { ApplicationMember, Conversation, ConversationAction, Message } from "@platform/sdk";
 import Link from "next/link";
 import { useParams } from "next/navigation";
 import { useCallback, useEffect, useRef, useState, type FormEvent, type KeyboardEvent } from "react";
@@ -28,6 +28,8 @@ export default function ConversationPage() {
 	const [error, setError] = useState<unknown>(null);
 	const [draft, setDraft] = useState("");
 	const [internal, setInternal] = useState(false);
+	const [members, setMembers] = useState<ApplicationMember[]>([]);
+	const [target, setTarget] = useState("");
 	const endRef = useRef<HTMLLIElement>(null);
 
 	const load = useCallback(
@@ -60,6 +62,13 @@ export default function ConversationPage() {
 	});
 
 	useEffect(() => {
+		api.members
+			.listForApplication(organization.id, application.id)
+			.then(setMembers)
+			.catch(() => setMembers([]));
+	}, [organization.id, application.id]);
+
+	useEffect(() => {
 		endRef.current?.scrollIntoView({ block: "end" });
 	}, [messages.length]);
 
@@ -73,6 +82,17 @@ export default function ConversationPage() {
 
 	const act = useAction(async (action: ConversationAction) => {
 		setConversation(await api.conversations.perform(organization.id, application.id, conversationId, action));
+		await load(true);
+	});
+
+	const handOff = useAction(async () => {
+		if (!target || !conversation) return;
+		const updated =
+			conversation.assigneeUserId === null
+				? await api.conversations.assign(organization.id, application.id, conversationId, target)
+				: await api.conversations.transfer(organization.id, application.id, conversationId, target);
+		setConversation(updated);
+		setTarget("");
 		await load(true);
 	});
 
@@ -152,6 +172,25 @@ export default function ConversationPage() {
 				) : null}
 			</div>
 
+			{!closed && conversation.status !== "RESOLVED" ? (
+				<div className="actions">
+					<select aria-label="Hand off to" value={target} onChange={(event) => setTarget(event.target.value)}>
+						<option value="">{conversation.assigneeUserId === null ? "Assign to…" : "Transfer to…"}</option>
+						{members
+							.filter((member) => member.userId !== conversation.assigneeUserId)
+							.map((member) => (
+								<option key={member.userId} value={member.userId}>
+									{member.displayName ?? member.email}
+								</option>
+							))}
+					</select>
+					<Button variant="secondary" loading={handOff.pending} disabled={!target} onClick={() => void handOff.run()}>
+						{conversation.assigneeUserId === null ? "Assign" : "Transfer"}
+					</Button>
+				</div>
+			) : null}
+
+			{handOff.error ? <Alert>{describeError(handOff.error, "That hand-off could not be completed.")}</Alert> : null}
 			{act.error ? <Alert>{describeError(act.error, "That action could not be completed.")}</Alert> : null}
 
 			<ol className="messages" aria-live="polite">

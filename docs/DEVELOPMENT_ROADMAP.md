@@ -73,7 +73,7 @@ Status legend: [x] implemented and confirmed; [ ] pending; [~] implemented but a
 - [~] Shared SDK (`@platform/sdk`: typed client, token refresh, error mapping; unit tests written, unrun)
 - [~] Foundation and auth screens (sign in, register, verify, forgot and reset password, organization list; unrun)
 - [ ] Applications and organization switcher, invitation acceptance
-- [~] Conversations inbox and conversation view with live updates (list, filters, thread, reply, notes, claim, release, resolve, reopen, close, SSE; assign picker pending a members endpoint)
+- [~] Conversations inbox and conversation view with live updates (list, filters, thread, reply, notes, claim, release, resolve, reopen, close, SSE, assign and transfer picker)
 - [ ] Knowledge, AI and widget settings, webhooks, team and roles, audit log
 
 ## Milestone 11 — SDK and Widget

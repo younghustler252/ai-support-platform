@@ -2,6 +2,7 @@ import type { HttpClient } from "./http";
 import type {
 	AgentEvent,
 	Application,
+	ApplicationMember,
 	Conversation,
 	ConversationAction,
 	ListConversationsQuery,
@@ -194,6 +195,16 @@ export function eventsApi(http: HttpClient) {
 
 			void run();
 			return { close: () => controller.abort() };
+		},
+	};
+}
+
+export function membersApi(http: HttpClient) {
+	return {
+		async listForApplication(organizationId: string, applicationId: string): Promise<ApplicationMember[]> {
+			return (
+				await http.get<{ members: ApplicationMember[] }>(`/organizations/${organizationId}/applications/${applicationId}/members`)
+			).members;
 		},
 	};
 }
