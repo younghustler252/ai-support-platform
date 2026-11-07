@@ -10,7 +10,10 @@ import { ApplicationContext, useOrganization } from "@/lib/context";
 import { describeError } from "@/lib/errors";
 import { useAsync } from "@/lib/hooks";
 
-const tabs = [{ label: "Overview", segment: "" }] as const;
+const tabs = [
+	{ label: "Overview", segment: "" },
+	{ label: "Inbox", segment: "inbox" },
+] as const;
 
 export default function ApplicationLayout({ children }: { children: ReactNode }) {
 	const { organization } = useOrganization();
@@ -49,7 +52,7 @@ export default function ApplicationLayout({ children }: { children: ReactNode })
 				{tabs.map((tab) => {
 					const href = tab.segment ? `${base}/${tab.segment}` : base;
 					return (
-						<Link key={tab.label} href={href} className="tab" aria-current={pathname === href ? "page" : undefined}>
+						<Link key={tab.label} href={href} className="tab" aria-current={pathname === href || (tab.segment !== "" && pathname.startsWith(`${href}/`)) ? "page" : undefined}>
 							{tab.label}
 						</Link>
 					);
