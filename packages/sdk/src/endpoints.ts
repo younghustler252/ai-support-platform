@@ -1,6 +1,12 @@
 import type { HttpClient } from "./http";
 import type {
+	AgentEvent,
 	Application,
+	Conversation,
+	ConversationAction,
+	ListConversationsQuery,
+	Message,
+	Page,
 	CreateApplicationInput,
 	LoginInput,
 	Organization,
@@ -90,5 +96,104 @@ export function invitationsApi(http: HttpClient) {
 	return {
 		accept: (token: string) =>
 			http.post<{ organization: { id: string; name: string }; role: TenantRole }>("/invitations/accept", { token }),
+	};
+}
+
+export function conversationsApi(http: HttpClient) {
+	const base = (organizationId: string, applicationId: string) =>
+		`/organizations/${organizationId}/applications/${applicationId}/conversations`;
+
+	async function act(organizationId: string, applicationId: string, conversationId: string, path: string, body?: unknown) {
+		return (await http.post<{ conversation: Conversation }>(`${base(organizationId, applicationId)}/${conversationId}/${path}`, body))
+			.conversation;
+	}
+
+	return {
+		async list(organizationId: string, applicationId: string, query: ListConversationsQuery = {}): Promise<Page<Conversation>> {
+			const result = await http.requestPage<{ conversations: Conversation[] }>(base(organizationId, applicationId), {
+				query: { ...query, status: query.status?.join(",") },
+			});
+			return { items: result.data.conversations, nextCursor: result.nextCursor };
+		},
+		async get(organizationId: string, applicationId: string, conversationId: string): Promise<Conversation> {
+			return (await http.get<{ conversation: Conversation }>(`${base(organizationId, applicationId)}/${conversationId}`)).conversation;
+		},
+		async messages(
+			organizationId: string,
+			applicationId: string,
+			conversationId: string,
+			query: { limit?: number; cursor?: string } = {},
+		): Promise<Page<Message>> {
+			const result = await http.requestPage<{ messages: Message[] }>(
+				`${base(organizationId, applicationId)}/${conversationId}/messages`,
+				{ query },
+			);
+			return { items: result.data.messages, nextCursor: result.nextCursor };
+		},
+		async send(
+			organizationId: string,
+			applicationId: string,
+			conversationId: string,
+			input: { body: string; internal?: boolean },
+		): Promise<Message> {
+			return (await http.post<{ message: Message }>(`${base(organizationId, applicationId)}/${conversationId}/messages`, input)).message;
+		},
+		perform: (organizationId: string, applicationId: string, conversationId: string, action: ConversationAction) =>
+			act(organizationId, applicationId, conversationId, action),
+		assign: (organizationId: string, applicationId: string, conversationId: string, userId: string) =>
+			act(organizationId, applicationId, conversationId, "assign", { userId }),
+		transfer: (organizationId: string, applicationId: string, conversationId: string, userId: string, note?: string) =>
+			act(organizationId, applicationId, conversationId, "transfer", { userId, note }),
+	};
+}
+
+export interface EventSubscription {
+	close(): void;
+}
+
+export function eventsApi(http: HttpClient) {
+	const RECONNECT_MIN_MS = 1000;
+	const RECONNECT_MAX_MS = 15000;
+
+	return {
+		subscribe(
+			organizationId: string,
+			applicationId: string,
+			handlers: { onEvent: (event: AgentEvent) => void; onStatus?: (connected: boolean) => void },
+		): EventSubscription {
+			const controller = new AbortController();
+			const path = `/organizations/${organizationId}/applications/${applicationId}/events`;
+
+			async function run(): Promise<void> {
+				let delay = RECONNECT_MIN_MS;
+				while (!controller.signal.aborted) {
+					try {
+						handlers.onStatus?.(true);
+						await http.stream(
+							path,
+							(message) => {
+								delay = RECONNECT_MIN_MS;
+								if (message.event !== "message.created" && message.event !== "conversation.updated") return;
+								try {
+									handlers.onEvent(JSON.parse(message.data) as AgentEvent);
+								} catch {
+									return;
+								}
+							},
+							controller.signal,
+						);
+					} catch {
+						if (controller.signal.aborted) return;
+					}
+					if (controller.signal.aborted) return;
+					handlers.onStatus?.(false);
+					await new Promise((resolve) => setTimeout(resolve, delay));
+					delay = Math.min(delay * 2, RECONNECT_MAX_MS);
+				}
+			}
+
+			void run();
+			return { close: () => controller.abort() };
+		},
 	};
 }

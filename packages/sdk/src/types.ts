@@ -52,3 +52,80 @@ export interface UpdateApplicationInput {
 	description?: string | null;
 	allowedOrigins?: string[];
 }
+
+export type ConversationStatus = "AI_ACTIVE" | "WAITING_FOR_AGENT" | "ASSIGNED_TO_AGENT" | "RESOLVED" | "CLOSED";
+
+export type MessageSender = "CUSTOMER" | "AI" | "AGENT" | "SYSTEM";
+
+export interface ConversationAssignee {
+	id: string;
+	email: string;
+	displayName: string | null;
+}
+
+export interface ConversationCustomer {
+	id: string;
+	externalId: string | null;
+	displayName: string | null;
+	email: string | null;
+}
+
+export interface Conversation {
+	id: string;
+	applicationId: string;
+	subject: string | null;
+	status: ConversationStatus;
+	assigneeUserId: string | null;
+	assignee: ConversationAssignee | null;
+	customer: ConversationCustomer;
+	lastMessageAt: string | null;
+	resolvedAt: string | null;
+	closedAt: string | null;
+	createdAt: string;
+	updatedAt: string;
+}
+
+export interface Message {
+	id: string;
+	conversationId: string;
+	sender: MessageSender;
+	senderUserId: string | null;
+	body: string;
+	internal: boolean;
+	metadata: Record<string, unknown> | null;
+	createdAt: string;
+}
+
+export interface Page<T> {
+	items: T[];
+	nextCursor: string | null;
+}
+
+export interface ListConversationsQuery {
+	status?: ConversationStatus[];
+	assignee?: "me" | "unassigned" | string;
+	customerId?: string;
+	limit?: number;
+	cursor?: string;
+}
+
+export type ConversationAction = "claim" | "release" | "resolve" | "reopen" | "close";
+
+export interface AgentMessageEvent {
+	type: "message.created";
+	conversationId: string;
+	messageId: string;
+	sender: MessageSender;
+	internal: boolean;
+	assigneeUserId: string | null;
+}
+
+export interface AgentConversationEvent {
+	type: "conversation.updated";
+	conversationId: string;
+	status: ConversationStatus;
+	assigneeUserId: string | null;
+	event: string;
+}
+
+export type AgentEvent = AgentMessageEvent | AgentConversationEvent;

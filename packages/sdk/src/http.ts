@@ -1,4 +1,5 @@
 import { ApiError } from "./errors";
+import { createSseParser, type SseMessage } from "./sse";
 import { memoryTokenStore, type TokenStore } from "./token-store";
 
 export interface ClientConfig {
@@ -55,6 +56,15 @@ export class HttpClient {
 	}
 
 	async request<T>(method: string, path: string, options: RequestOptions = {}): Promise<T> {
+		return (await this.parse<T>(await this.execute(method, path, options))).data;
+	}
+
+	async requestPage<T>(path: string, options: RequestOptions = {}): Promise<{ data: T; nextCursor: string | null }> {
+		const envelope = await this.parse<T>(await this.execute("GET", path, options));
+		return { data: envelope.data, nextCursor: envelope.meta?.nextCursor ?? null };
+	}
+
+	private async execute(method: string, path: string, options: RequestOptions): Promise<Response> {
 		const authenticated = options.auth !== false;
 		if (authenticated) await this.ensureFreshToken();
 
@@ -66,7 +76,7 @@ export class HttpClient {
 				this.expire();
 			}
 		}
-		return this.parse<T>(response);
+		return response;
 	}
 
 	get<T>(path: string, options?: RequestOptions): Promise<T> {
@@ -87,6 +97,51 @@ export class HttpClient {
 
 	delete<T>(path: string, options?: RequestOptions): Promise<T> {
 		return this.request<T>("DELETE", path, options);
+	}
+
+	async stream(path: string, onMessage: (message: SseMessage) => void, signal: AbortSignal): Promise<void> {
+		await this.ensureFreshToken();
+		let response = await this.openStream(path, signal);
+		if (response.status === 401) {
+			if (!(await this.refresh())) {
+				this.expire();
+				throw new ApiError({ status: 401, code: "UNAUTHENTICATED", message: "Session expired" });
+			}
+			response = await this.openStream(path, signal);
+		}
+		if (!response.ok || !response.body) {
+			throw new ApiError({ status: response.status, code: "STREAM_FAILED", message: `Stream failed with status ${response.status}` });
+		}
+
+		const parser = createSseParser(onMessage);
+		const decoder = new TextDecoder();
+		const reader = response.body.getReader();
+		try {
+			for (;;) {
+				const { done, value } = await reader.read();
+				if (done) return;
+				parser.push(decoder.decode(value, { stream: true }));
+			}
+		} finally {
+			reader.releaseLock();
+		}
+	}
+
+	private async openStream(path: string, signal: AbortSignal): Promise<Response> {
+		const headers: Record<string, string> = { Accept: "text/event-stream", ...this.config.headers?.() };
+		const token = this.tokens.get();
+		if (token) headers.Authorization = `Bearer ${token.value}`;
+		try {
+			return await this.fetchImpl(this.url(path, undefined), {
+				method: "GET",
+				headers,
+				credentials: this.config.credentials ?? "include",
+				signal,
+			});
+		} catch (error) {
+			if (error instanceof Error && error.name === "AbortError") throw error;
+			throw new ApiError({ status: 0, code: "NETWORK_ERROR", message: "Could not reach the server" });
+		}
 	}
 
 	private expire(): void {
@@ -141,10 +196,11 @@ export class HttpClient {
 		return `${this.config.baseUrl.replace(/\/$/, "")}${path}${search ? `?${search}` : ""}`;
 	}
 
-	private async parse<T>(response: Response): Promise<T> {
-		if (response.status === 204) return undefined as T;
+	private async parse<T>(response: Response): Promise<{ data: T; meta?: { nextCursor?: string | null } }> {
+		if (response.status === 204) return { data: undefined as T };
 		const body = (await response.json().catch(() => null)) as {
 			data?: T;
+			meta?: { nextCursor?: string | null };
 			error?: { code?: string; message?: string; details?: unknown; requestId?: string };
 		} | null;
 
@@ -160,6 +216,6 @@ export class HttpClient {
 		if (body === null || body.data === undefined) {
 			throw new ApiError({ status: response.status, code: "INVALID_RESPONSE", message: "The server sent an unexpected response" });
 		}
-		return body.data;
+		return { data: body.data, meta: body.meta };
 	}
 }
